@@ -1,0 +1,8 @@
+[
+    {
+        "id": 1,
+        "name": "Dump Singer 1",
+        "description": "This is the first singer preset",
+        "spk_emb_path": "path/to/singer1/spk_emb"
+    }
+]
