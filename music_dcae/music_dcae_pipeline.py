@@ -135,7 +135,7 @@ class MusicDCAE(nn.Module):
 
 if __name__ == "__main__":
 
-    audio, sr = torchaudio.load("/root/data/repo/gongjunmin/sag_train/orig2.wav")
+    audio, sr = torchaudio.load("test.wav")
     audio_lengths = torch.tensor([audio.shape[1]])
     audios = audio.unsqueeze(0)
     
@@ -151,5 +151,5 @@ if __name__ == "__main__":
     print("latents shape: ", latents.shape)
     print("latent_lengths: ", latent_lengths)
     print("sr: ", sr)
-    torchaudio.save("/root/data/repo/gongjunmin/sag_train/reconstructed.wav", pred_wavs[0], sr)
-    print("reconstructed wav saved to /root/data/repo/gongjunmin/sag_train/reconstructed.wav")
+    torchaudio.save("test_reconstructed.flac", pred_wavs[0], sr)
+    print("/test_reconstructed.flac")
