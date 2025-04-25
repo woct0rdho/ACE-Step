@@ -105,15 +105,3 @@ class LogMelSpectrogram(nn.Module):
             return x, self.compress(linear)
 
         return x
-
-
-def get_mel_transform():
-    return LogMelSpectrogram(
-        sample_rate=44100,
-        n_fft=2048,
-        win_length=2048,
-        hop_length=512,
-        f_min=40,
-        f_max=16000,
-        n_mels=128,
-    )

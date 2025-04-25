@@ -19,21 +19,14 @@ import torch.nn.functional as F
 from torch import nn
 
 from diffusers.configuration_utils import ConfigMixin, register_to_config
-from diffusers.utils import BaseOutput, logging, is_torch_version
+from diffusers.utils import BaseOutput, is_torch_version
 from diffusers.models.modeling_utils import ModelMixin
-from diffusers.models.embeddings import TimestepEmbedding, Timesteps, get_2d_sincos_pos_embed
+from diffusers.models.embeddings import TimestepEmbedding, Timesteps
 from diffusers.loaders import FromOriginalModelMixin, PeftAdapterMixin
 
 
-try:
-    from .attention import LinearTransformerBlock, t2i_modulate
-    from .lyrics_utils.lyric_encoder import ConformerEncoder as LyricEncoder
-except ImportError:
-    from attention import LinearTransformerBlock, t2i_modulate
-    from lyrics_utils.lyric_encoder import ConformerEncoder as LyricEncoder
-
-
-logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
+from .attention import LinearTransformerBlock, t2i_modulate
+from .lyrics_utils.lyric_encoder import ConformerEncoder as LyricEncoder
 
 
 def cross_norm(hidden_states, controlnet_input):
@@ -154,13 +147,13 @@ class PatchEmbed(nn.Module):
 
 
 @dataclass
-class Transformer1DModelOutput(BaseOutput):
+class Transformer2DModelOutput(BaseOutput):
 
     sample: torch.FloatTensor
     proj_losses: Optional[Tuple[Tuple[str, torch.Tensor]]] = None
 
 
-class ACEFlowBaseModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOriginalModelMixin):
+class FusicTransformer2DModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOriginalModelMixin):
     _supports_gradient_checkpointing = True
 
     @register_to_config
@@ -438,7 +431,7 @@ class ACEFlowBaseModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOriginalMo
         if not return_dict:
             return (output, proj_losses)
 
-        return Transformer1DModelOutput(sample=output, proj_losses=proj_losses)
+        return Transformer2DModelOutput(sample=output, proj_losses=proj_losses)
 
     # @torch.compile
     def forward(

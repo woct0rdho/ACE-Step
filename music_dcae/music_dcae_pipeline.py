@@ -1,37 +1,32 @@
+import os
 import torch
-import torch.nn as nn
 from diffusers import AutoencoderDC
 import torchaudio
 import torchvision.transforms as transforms
 import torchaudio
+from diffusers.models.modeling_utils import ModelMixin
+from diffusers.loaders import FromOriginalModelMixin
+from diffusers.configuration_utils import ConfigMixin, register_to_config
+
 
 try:
-    from .music_log_mel import get_mel_transform
     from .music_vocoder import ADaMoSHiFiGANV1
 except ImportError:
-    from music_log_mel import get_mel_transform
     from music_vocoder import ADaMoSHiFiGANV1
 
-import os
 
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_PRETRAINED_PATH = os.path.join(root_dir, "checkpoints", "music_dcae_f8c8")
-VOCODER_PRETRAINED_PATH = os.path.join(root_dir, "checkpoints", "music_vocoder.pt")
+VOCODER_PRETRAINED_PATH = os.path.join(root_dir, "checkpoints", "music_vocoder")
 
 
-class MusicDCAE(nn.Module):
-    def __init__(self, pretrained_path=DEFAULT_PRETRAINED_PATH, encoder_only=False, source_sample_rate=None):
+class MusicDCAE(ModelMixin, ConfigMixin, FromOriginalModelMixin):
+    @register_to_config
+    def __init__(self, source_sample_rate=None, dcae_checkpoint_path=DEFAULT_PRETRAINED_PATH, vocoder_checkpoint_path=VOCODER_PRETRAINED_PATH):
         super(MusicDCAE, self).__init__()
-        dcae = AutoencoderDC.from_pretrained(pretrained_path)
-        self.encoder_only = encoder_only
 
-        self.mel_transform = get_mel_transform()
-        if encoder_only:
-            self.encoder = dcae.encoder
-        else:
-            self.encoder = dcae.encoder
-            self.decoder = dcae.decoder
-            self.vocoder = ADaMoSHiFiGANV1(VOCODER_PRETRAINED_PATH).eval()
+        self.dcae = AutoencoderDC.from_pretrained(dcae_checkpoint_path)
+        self.vocoder = ADaMoSHiFiGANV1.from_pretrained(vocoder_checkpoint_path)
 
         if source_sample_rate is None:
             source_sample_rate = 48000
@@ -57,7 +52,7 @@ class MusicDCAE(nn.Module):
     def forward_mel(self, audios):
         mels = []
         for i in range(len(audios)):
-            image = self.mel_transform(audios[i])
+            image = self.vocoder.mel_transform(audios[i])
             mels.append(image)
         mels = torch.stack(mels)
         return mels
@@ -89,7 +84,7 @@ class MusicDCAE(nn.Module):
         mels = self.transform(mels)
         latents = []
         for mel in mels:
-            latent = self.encoder(mel.unsqueeze(0))
+            latent = self.dcae.encoder(mel.unsqueeze(0))
             latents.append(latent)
         latents = torch.cat(latents, dim=0)
         latent_lengths = (audio_lengths / sr * 44100 / 512 / self.time_dimention_multiple).long()
@@ -103,7 +98,7 @@ class MusicDCAE(nn.Module):
         mels = []
 
         for latent in latents:
-            mel = self.decoder(latent.unsqueeze(0))
+            mel = self.dcae.decoder(latent.unsqueeze(0))
             mels.append(mel)
         mels = torch.cat(mels, dim=0)
 
@@ -152,4 +147,4 @@ if __name__ == "__main__":
     print("latent_lengths: ", latent_lengths)
     print("sr: ", sr)
     torchaudio.save("test_reconstructed.flac", pred_wavs[0], sr)
-    print("/test_reconstructed.flac")
+    print("test_reconstructed.flac")

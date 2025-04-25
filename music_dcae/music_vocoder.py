@@ -11,6 +11,10 @@ import torch.nn.functional as F
 from torch.nn import Conv1d
 from torch.nn.utils import weight_norm
 from torch.nn.utils.parametrize import remove_parametrizations as remove_weight_norm
+from diffusers.models.modeling_utils import ModelMixin
+from diffusers.loaders import FromOriginalModelMixin
+from diffusers.configuration_utils import ConfigMixin, register_to_config
+
 
 try:
     from music_log_mel import LogMelSpectrogram
@@ -480,60 +484,67 @@ class HiFiGANGenerator(nn.Module):
         remove_weight_norm(self.conv_post)
 
 
-class ADaMoSHiFiGANV1(nn.Module):
+class ADaMoSHiFiGANV1(ModelMixin, ConfigMixin, FromOriginalModelMixin):
+    
+    @register_to_config
     def __init__(
         self,
-        checkpoint_path: str = "checkpoints/adamos-generator-1640000.pth",
+        input_channels: int = 128,
+        depths: List[int] = [3, 3, 9, 3],
+        dims: List[int] = [128, 256, 384, 512],
+        drop_path_rate: float = 0.0,
+        kernel_sizes: Tuple[int] = (7,),
+        upsample_rates: Tuple[int] = (4, 4, 2, 2, 2, 2, 2),
+        upsample_kernel_sizes: Tuple[int] = (8, 8, 4, 4, 4, 4, 4),
+        resblock_kernel_sizes: Tuple[int] = (3, 7, 11, 13),
+        resblock_dilation_sizes: Tuple[Tuple[int]] = (
+            (1, 3, 5), (1, 3, 5), (1, 3, 5), (1, 3, 5)),
+        num_mels: int = 512,
+        upsample_initial_channel: int = 1024,
+        use_template: bool = False,
+        pre_conv_kernel_size: int = 13,
+        post_conv_kernel_size: int = 13,
+        sampling_rate: int = 44100,
+        n_fft: int = 2048,
+        win_length: int = 2048,
+        hop_length: int = 512,
+        f_min: int = 40,
+        f_max: int = 16000,
+        n_mels: int = 128,
     ):
         super().__init__()
 
         self.backbone = ConvNeXtEncoder(
-            input_channels=128,
-            depths=[3, 3, 9, 3],
-            dims=[128, 256, 384, 512],
-            drop_path_rate=0,
-            kernel_sizes=(7,),
+            input_channels=input_channels,
+            depths=depths,
+            dims=dims,
+            drop_path_rate=drop_path_rate,
+            kernel_sizes=kernel_sizes,
         )
 
         self.head = HiFiGANGenerator(
-            hop_length=512,
-            upsample_rates=(4, 4, 2, 2, 2, 2, 2),
-            upsample_kernel_sizes=(8, 8, 4, 4, 4, 4, 4),
-            resblock_kernel_sizes=(3, 7, 11, 13),
-            resblock_dilation_sizes=(
-                (1, 3, 5), (1, 3, 5), (1, 3, 5), (1, 3, 5)),
-            num_mels=512,
-            upsample_initial_channel=1024,
-            use_template=False,
-            pre_conv_kernel_size=13,
-            post_conv_kernel_size=13,
+            hop_length=hop_length,
+            upsample_rates=upsample_rates,
+            upsample_kernel_sizes=upsample_kernel_sizes,
+            resblock_kernel_sizes=resblock_kernel_sizes,
+            resblock_dilation_sizes=resblock_dilation_sizes,
+            num_mels=num_mels,
+            upsample_initial_channel=upsample_initial_channel,
+            use_template=use_template,
+            pre_conv_kernel_size=pre_conv_kernel_size,
+            post_conv_kernel_size=post_conv_kernel_size,
         )
-        self.sampling_rate = 44100
-
-        ckpt_state = torch.load(checkpoint_path, map_location="cpu")
-
-        if "state_dict" in ckpt_state:
-            ckpt_state = ckpt_state["state_dict"]
-
-            if any(k.startswith("generator.") for k in ckpt_state):
-                ckpt_state = {
-                    k.replace("generator.", ""): v
-                    for k, v in ckpt_state.items()
-                    if k.startswith("generator.")
-                }
-
-        self.load_state_dict(ckpt_state)
-        self.eval()
-
+        self.sampling_rate = sampling_rate
         self.mel_transform = LogMelSpectrogram(
-            sample_rate=44100,
-            n_fft=2048,
-            win_length=2048,
-            hop_length=512,
-            f_min=40,
-            f_max=16000,
-            n_mels=128,
+            sample_rate=sampling_rate,
+            n_fft=n_fft,
+            win_length=win_length,
+            hop_length=hop_length,
+            f_min=f_min,
+            f_max=f_max,
+            n_mels=n_mels,
         )
+        self.eval()
 
     @torch.no_grad()
     def decode(self, mel):
@@ -554,12 +565,12 @@ class ADaMoSHiFiGANV1(nn.Module):
 if __name__ == "__main__":
     import soundfile as sf
 
-    x = "./test.wav"
-    model = ADaMoSHiFiGANV1(checkpoint_path='./step_001640000.pth')
+    x = "test_audio.flac"
+    model = ADaMoSHiFiGANV1.from_pretrained("./checkpoints/music_vocoder", local_files_only=True)
 
     wav, sr = librosa.load(x, sr=44100, mono=True)
     wav = torch.from_numpy(wav).float()[None]
     mel = model.encode(wav)
 
     wav = model.decode(mel)[0].mT
-    sf.write("test_out.wav", wav.cpu().numpy(), 44100)
+    sf.write("test_audio_vocoder_rec.flac", wav.cpu().numpy(), 44100)
