@@ -192,3 +192,5 @@ remote/*
 MG2P/*
 audio_getter.py
 refiner_loss_debug/
+outputs/*
+save_checkpoint.ipynb

@@ -15,18 +15,20 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device_id)
 
 from ui.components import create_main_demo_ui
 from pipeline_fusic import FusicPipeline
+from data_sampler import DataSampler
 
 
 def main(args):
  
     model_demo = FusicPipeline(
         checkpoint_dir=args.checkpoint_path,
-        device_id=args.device_id,
         dtype="bfloat16" if args.bf16 else "float32"
     )
+    data_sampler = DataSampler()
 
     demo = create_main_demo_ui(
         text2music_process_func=model_demo.__call__,
+        sample_data_func=data_sampler.sample,
     )
     demo.launch(
         server_name="0.0.0.0",

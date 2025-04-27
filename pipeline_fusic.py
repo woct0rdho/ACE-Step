@@ -7,6 +7,8 @@ import torch
 import torch.nn as nn
 from loguru import logger
 from tqdm import tqdm
+import json
+import math
 
 from schedulers.scheduling_flow_match_euler_discrete import FlowMatchEulerDiscreteScheduler
 from schedulers.scheduling_flow_match_heun_discrete import FlowMatchHeunDiscreteScheduler
@@ -79,6 +81,11 @@ class FusicPipeline:
         self.text_encoder_model = text_encoder_model
         self.text_tokenizer = AutoTokenizer.from_pretrained(text_encoder_checkpoint_path)
         self.loaded = True
+
+        # compile
+        self.music_dcae = torch.compile(self.music_dcae)
+        self.fusic_transformer = torch.compile(self.fusic_transformer)
+        self.text_encoder_model = torch.compile(self.text_encoder_model)
 
     def get_text_embeddings(self, texts, device, text_max_length=256):
         inputs = self.text_tokenizer(texts, return_tensors="pt", padding=True, truncation=True, max_length=text_max_length)
@@ -211,6 +218,9 @@ class FusicPipeline:
         encoder_text_hidden_states_null=None,
         use_erg_lyric=False,
         use_erg_diffusion=False,
+        retake_random_generators=None,
+        retake_variance=0.5,
+        add_retake_noise=False,
     ):
 
         logger.info("cfg_type: {}, guidance_scale: {}, omega_scale: {}".format(cfg_type, guidance_scale, omega_scale))
@@ -247,7 +257,14 @@ class FusicPipeline:
             logger.info(f"oss_steps: {oss_steps}, num_inference_steps: {num_inference_steps} after remapping to timesteps {timesteps}")
         else:
             timesteps, num_inference_steps = retrieve_timesteps(scheduler, num_inference_steps=infer_steps, device=device, timesteps=None)
+        
         target_latents = randn_tensor(shape=(bsz, 8, 16, frame_length), generator=random_generators, device=device, dtype=dtype)
+        if add_retake_noise:
+            retake_variance = torch.tensor(retake_variance * math.pi/2).to(device).to(dtype)
+            retake_latents = randn_tensor(shape=(bsz, 8, 16, frame_length), generator=retake_random_generators, device=device, dtype=dtype)
+            # to make sure mean = 0, std = 1
+            target_latents = torch.cos(retake_variance) * target_latents + torch.sin(retake_variance) * retake_latents
+        
         attention_mask = torch.ones(bsz, frame_length, device=device, dtype=dtype)
         
         # guidance interval逻辑
@@ -454,6 +471,9 @@ class FusicPipeline:
         use_erg_lyric: bool = True,
         use_erg_diffusion: bool = True,
         oss_steps: str = None,
+        retake_seeds: list = None,
+        retake_variance: float = 0.5,
+        task: str = "text2music",
         save_path: str = None,
         format: str = "flac",
         batch_size: int = 1,
@@ -470,6 +490,7 @@ class FusicPipeline:
         start_time = time.time()
 
         random_generators, actual_seeds = self.set_seeds(batch_size, manual_seeds)
+        retake_random_generators, actual_retake_seeds = self.set_seeds(batch_size, retake_seeds)
 
         if isinstance(oss_steps, str) and len(oss_steps) > 0:
             oss_steps = list(map(int, oss_steps.split(",")))
@@ -499,7 +520,7 @@ class FusicPipeline:
             lyric_mask = torch.tensor(lyric_mask).unsqueeze(0).to(self.device).repeat(batch_size, 1)
 
         if audio_duration <= 0:
-            audio_duration = random.uniform(30.0, 300.0)
+            audio_duration = random.uniform(30.0, 240.0)
             logger.info(f"random audio duration: {audio_duration}")
 
         end_time = time.time()
@@ -526,6 +547,9 @@ class FusicPipeline:
             encoder_text_hidden_states_null=encoder_text_hidden_states_null,
             use_erg_lyric=use_erg_lyric,
             use_erg_diffusion=use_erg_diffusion,
+            retake_random_generators=retake_random_generators,
+            retake_variance=retake_variance,
+            add_retake_noise=task == "retake",
         )
 
         end_time = time.time()
@@ -548,6 +572,7 @@ class FusicPipeline:
         }
 
         input_params_json = {
+            "task": task,
             "prompt": prompt,
             "lyrics": lyrics,
             "audio_duration": audio_duration,
@@ -565,6 +590,14 @@ class FusicPipeline:
             "oss_steps": oss_steps,
             "timecosts": timecosts,
             "actual_seeds": actual_seeds,
+            "retake_seeds": actual_retake_seeds,
+            "retake_variance": retake_variance,
         }
+        # save input_params_json
+        for output_audio_path in output_paths:
+            input_params_json_save_path = output_audio_path.replace(f".{format}", "_input_params.json")
+            input_params_json["audio_path"] = output_audio_path
+            with open(input_params_json_save_path, "w") as f:
+                json.dump(input_params_json, f, indent=4, ensure_ascii=False)
 
         return output_paths + [input_params_json]
