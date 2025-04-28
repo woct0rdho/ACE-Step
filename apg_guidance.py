@@ -53,6 +53,14 @@ def apg_forward(
 def cfg_forward(cond_output, uncond_output, cfg_strength):
     return uncond_output + cfg_strength * (cond_output - uncond_output)
 
+def cfg_double_condition_forward(
+    cond_output,
+    uncond_output,
+    only_text_cond_output,
+    guidance_scale_text,
+    guidance_scale_lyric,
+):
+    return (1 - guidance_scale_text) * uncond_output + (guidance_scale_text - guidance_scale_lyric) * only_text_cond_output + guidance_scale_lyric * cond_output 
 
 
 def optimized_scale(positive_flat, negative_flat):
@@ -71,16 +79,12 @@ def optimized_scale(positive_flat, negative_flat):
 
 def cfg_zero_star(noise_pred_with_cond, noise_pred_uncond, guidance_scale, i, zero_steps=1, use_zero_init=True):
     bsz = noise_pred_with_cond.shape[0]
-    print("debug noise_pred_with_cond", noise_pred_with_cond.shape)
     positive_flat = noise_pred_with_cond.view(bsz, -1)
     negative_flat = noise_pred_uncond.view(bsz, -1)
-    print(f"debug {positive_flat.shape=} {negative_flat.shape=}")
     alpha = optimized_scale(positive_flat, negative_flat)
-    print(f"debug {alpha.shape=}")
     alpha = alpha.view(bsz, 1, 1, 1)
     if (i <= zero_steps) and use_zero_init:
         noise_pred = noise_pred_with_cond * 0.
     else:
         noise_pred = noise_pred_uncond * alpha + guidance_scale * (noise_pred_with_cond - noise_pred_uncond * alpha)
-    print(f"debug {noise_pred.shape=}")
     return noise_pred

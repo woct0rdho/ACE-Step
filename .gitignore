@@ -193,4 +193,6 @@ MG2P/*
 audio_getter.py
 refiner_loss_debug/
 outputs/*
+!outputs/
 save_checkpoint.ipynb
+repos/*

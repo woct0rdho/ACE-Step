@@ -10,17 +10,20 @@ from tqdm import tqdm
 import json
 import math
 
+# from diffusers.pipelines.pipeline_utils import DiffusionPipeline
 from schedulers.scheduling_flow_match_euler_discrete import FlowMatchEulerDiscreteScheduler
 from schedulers.scheduling_flow_match_heun_discrete import FlowMatchHeunDiscreteScheduler
 from diffusers.pipelines.stable_diffusion_3.pipeline_stable_diffusion_3 import retrieve_timesteps
 from diffusers.utils.torch_utils import randn_tensor
 from transformers import UMT5EncoderModel, AutoTokenizer
 
+from hf_download import download_repo
+
 from language_segmentation import LangSegment
 from music_dcae.music_dcae_pipeline import MusicDCAE
 from models.fusic_transformer import FusicTransformer2DModel
 from models.lyrics_utils.lyric_tokenizer import VoiceBpeTokenizer
-from apg_guidance import apg_forward, MomentumBuffer, cfg_forward, cfg_zero_star
+from apg_guidance import apg_forward, MomentumBuffer, cfg_forward, cfg_zero_star, cfg_double_condition_forward
 import torchaudio
 
 
@@ -41,10 +44,23 @@ def ensure_directory_exists(directory):
         os.makedirs(directory)
 
 
+REPO_ID = "timedomain/fusic_v1"
+
+
+# class FusicPipeline(DiffusionPipeline):
 class FusicPipeline:
 
     def __init__(self, checkpoint_dir=None, device_id=0, dtype="bfloat16", text_encoder_checkpoint_path=None, **kwargs):
-        assert checkpoint_dir is not None, "Checkpoint directory must be provided."
+        # check checkpoint dir exist
+        if checkpoint_dir is None:
+            checkpoint_dir = os.path.join(os.path.dirname(__file__), "checkpoints")
+            if not os.path.exists(checkpoint_dir):
+                # huggingface download
+                download_repo(
+                    repo_id=REPO_ID,
+                    save_path=checkpoint_dir
+                )
+
         self.checkpoint_dir = checkpoint_dir
         device = torch.device(f"cuda:{device_id}") if torch.cuda.is_available() else torch.device("cpu")
         self.dtype = torch.bfloat16 if dtype == "bfloat16" else torch.float32
@@ -212,8 +228,8 @@ class FusicPipeline:
         zero_steps=1,
         use_zero_init=True,
         guidance_interval=0.5,
-        guidance_interval_decay=1.0,  # 新增参数，范围[0,1]
-        min_guidance_scale=3.0,      # 新增参数，默认最小guidance scale
+        guidance_interval_decay=1.0,
+        min_guidance_scale=3.0,
         oss_steps=[],
         encoder_text_hidden_states_null=None,
         use_erg_lyric=False,
@@ -221,12 +237,19 @@ class FusicPipeline:
         retake_random_generators=None,
         retake_variance=0.5,
         add_retake_noise=False,
+        guidance_scale_text=0.0,
+        guidance_scale_lyric=0.0,
     ):
 
         logger.info("cfg_type: {}, guidance_scale: {}, omega_scale: {}".format(cfg_type, guidance_scale, omega_scale))
         do_classifier_free_guidance = True
         if guidance_scale == 0.0 or guidance_scale == 1.0:
             do_classifier_free_guidance = False
+        
+        do_double_condition_guidance = False
+        if guidance_scale_text is not None and guidance_scale_text > 1.0 and guidance_scale_lyric is not None and guidance_scale_lyric > 1.0:
+            do_double_condition_guidance = True
+            logger.info("do_double_condition_guidance: {}, guidance_scale_text: {}, guidance_scale_lyric: {}".format(do_double_condition_guidance, guidance_scale_text, guidance_scale_lyric))
 
         device = encoder_text_hidden_states.device
         dtype = encoder_text_hidden_states.dtype
@@ -292,7 +315,7 @@ class FusicPipeline:
             
             return encoder_hidden_states
 
-        # 先encoder获取条件
+        # P(speaker, text, lyric)
         encoder_hidden_states, encoder_hidden_mask = self.fusic_transformer.encode(
             encoder_text_hidden_states,
             text_attention_mask,
@@ -300,25 +323,52 @@ class FusicPipeline:
             lyric_token_ids,
             lyric_mask,
         )
+
         if use_erg_lyric:
+            # P(null_speaker, text_weaker, lyric_weaker)
             encoder_hidden_states_null = forward_encoder_with_temperature(
                 self,
                 inputs={
                     "encoder_text_hidden_states": encoder_text_hidden_states_null if encoder_text_hidden_states_null is not None else torch.zeros_like(encoder_text_hidden_states),
                     "text_attention_mask": text_attention_mask,
-                    "speaker_embeds": speaker_embds,
+                    "speaker_embeds": torch.zeros_like(speaker_embds),
                     "lyric_token_idx": lyric_token_ids,
                     "lyric_mask": lyric_mask,
                 }
             )
         else:
+            # P(null_speaker, null_text, null_lyric)
             encoder_hidden_states_null, _ = self.fusic_transformer.encode(
-                encoder_text_hidden_states,
+                torch.zeros_like(encoder_text_hidden_states),
                 text_attention_mask,
-                speaker_embds,
+                torch.zeros_like(speaker_embds),
                 torch.zeros_like(lyric_token_ids),
                 lyric_mask,
             )
+        
+        encoder_hidden_states_no_lyric = None
+        if do_double_condition_guidance:
+            # P(null_speaker, text, lyric_weaker)
+            if use_erg_lyric:
+                encoder_hidden_states_no_lyric = forward_encoder_with_temperature(
+                    self,
+                    inputs={
+                        "encoder_text_hidden_states": encoder_text_hidden_states,
+                        "text_attention_mask": text_attention_mask,
+                        "speaker_embeds": torch.zeros_like(speaker_embds),
+                        "lyric_token_idx": lyric_token_ids,
+                        "lyric_mask": lyric_mask,
+                    }
+                )
+            # P(null_speaker, text, no_lyric)
+            else:
+                encoder_hidden_states_no_lyric, _ = self.fusic_transformer.encode(
+                    encoder_text_hidden_states,
+                    text_attention_mask,
+                    torch.zeros_like(speaker_embds),
+                    torch.zeros_like(lyric_token_ids),
+                    lyric_mask,
+                )
 
         def forward_diffusion_with_temperature(self, hidden_states, timestep, inputs, tau=0.01, l_min=15, l_max=20):
             handlers = []
@@ -358,6 +408,7 @@ class FusicPipeline:
                 latent_model_input = latents
                 timestep = t.expand(latent_model_input.shape[0])
                 output_length = latent_model_input.shape[-1]
+                # P(x|speaker, text, lyric)
                 noise_pred_with_cond = self.fusic_transformer.decode(
                     hidden_states=latent_model_input,
                     attention_mask=attention_mask,
@@ -366,6 +417,18 @@ class FusicPipeline:
                     output_length=output_length,
                     timestep=timestep,
                 ).sample
+
+                noise_pred_with_only_text_cond = None
+                if do_double_condition_guidance and encoder_hidden_states_no_lyric is not None:
+                    noise_pred_with_only_text_cond = self.fusic_transformer.decode(
+                        hidden_states=latent_model_input,
+                        attention_mask=attention_mask,
+                        encoder_hidden_states=encoder_hidden_states_no_lyric,
+                        encoder_hidden_mask=encoder_hidden_mask,
+                        output_length=output_length,
+                        timestep=timestep,
+                    ).sample
+
                 if use_erg_diffusion:
                     noise_pred_uncond = forward_diffusion_with_temperature(
                         self,
@@ -388,7 +451,16 @@ class FusicPipeline:
                         timestep=timestep,
                     ).sample
 
-                if cfg_type == "apg":
+                if do_double_condition_guidance and noise_pred_with_only_text_cond is not None:
+                    noise_pred = cfg_double_condition_forward(
+                        cond_output=noise_pred_with_cond,
+                        uncond_output=noise_pred_uncond,
+                        only_text_cond_output=noise_pred_with_only_text_cond,
+                        guidance_scale_text=guidance_scale_text,
+                        guidance_scale_lyric=guidance_scale_lyric,
+                    )
+
+                elif cfg_type == "apg":
                     noise_pred = apg_forward(
                         pred_cond=noise_pred_with_cond,
                         pred_uncond=noise_pred_uncond,
@@ -471,6 +543,8 @@ class FusicPipeline:
         use_erg_lyric: bool = True,
         use_erg_diffusion: bool = True,
         oss_steps: str = None,
+        guidance_scale_text: float = 0.0,
+        guidance_scale_lyric: float = 0.0,
         retake_seeds: list = None,
         retake_variance: float = 0.5,
         task: str = "text2music",
@@ -550,6 +624,8 @@ class FusicPipeline:
             retake_random_generators=retake_random_generators,
             retake_variance=retake_variance,
             add_retake_noise=task == "retake",
+            guidance_scale_text=guidance_scale_text,
+            guidance_scale_lyric=guidance_scale_lyric,
         )
 
         end_time = time.time()
@@ -592,6 +668,8 @@ class FusicPipeline:
             "actual_seeds": actual_seeds,
             "retake_seeds": actual_retake_seeds,
             "retake_variance": retake_variance,
+            "guidance_scale_text": guidance_scale_text,
+            "guidance_scale_lyric": guidance_scale_lyric,
         }
         # save input_params_json
         for output_audio_path in output_paths:
