@@ -63,15 +63,15 @@ def create_text2music_ui(
 ):
     with gr.Row():
         with gr.Column():
-            
             with gr.Row(equal_height=True):
+                # add markdown, tags and lyrics examples are from ai music generation community
                 audio_duration = gr.Slider(-1, 240.0, step=0.00001, value=180, label="Audio Duration", interactive=True, info="-1 means random duration (30 ~ 240).", scale=9)
                 sample_bnt = gr.Button("Sample", variant="primary", scale=1)
             
-            prompt = gr.Textbox(lines=2, label="Tags", max_lines=4, placeholder=TAG_PLACEHOLDER, info="Support tags, descriptions, and scene. Use commas to separate different tags.")
+            prompt = gr.Textbox(lines=2, label="Tags", max_lines=4, placeholder=TAG_PLACEHOLDER, info="Support tags, descriptions, and scene. Use commas to separate different tags.\ntags and lyrics examples are from ai music generation community")
             lyrics = gr.Textbox(lines=9, label="Lyrics", max_lines=13, placeholder=LYRIC_PLACEHOLDER, info="Support lyric structure tags like [verse], [chorus], and [bridge] to separate different parts of the lyrics.\nUse [instrumental] or [inst] to generate instrumental music. Not support genre structure tag in lyrics")
 
-            with gr.Accordion("Basic Settings", open=True):
+            with gr.Accordion("Basic Settings", open=False):
                 infer_step = gr.Slider(minimum=1, maximum=1000, step=1, value=60, label="Infer Steps", interactive=True)
                 guidance_scale = gr.Slider(minimum=0.0, maximum=200.0, step=0.1, value=15.0, label="Guidance Scale", interactive=True, info="When guidance_scale_lyric > 1 and guidance_scale_text > 1, the guidance scale will not be applied.")
                 guidance_scale_text = gr.Slider(minimum=0.0, maximum=10.0, step=0.1, value=5.0, label="Guidance Scale Text", interactive=True, info="Guidance scale for text condition. It can only apply to cfg. set guidance_scale_text=5.0, guidance_scale_lyric=1.5 for start")
@@ -93,14 +93,14 @@ def create_text2music_ui(
                 min_guidance_scale = gr.Slider(minimum=0.0, maximum=200.0, step=0.1, value=3.0, label="Min Guidance Scale", interactive=True, info="Min guidance scale for guidance interval decay's end scale")
                 oss_steps = gr.Textbox(label="OSS Steps", placeholder="16, 29, 52, 96, 129, 158, 172, 183, 189, 200", value=None, info="Optimal Steps for the generation. But not test well")
 
-            text2music_bnt = gr.Button(variant="primary")
+            text2music_bnt = gr.Button("Generate", variant="primary")
 
         with gr.Column():
             outputs, input_params_json = create_output_ui()
             with gr.Tab("retake"):
                 retake_variance = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, value=0.2, label="variance", info="Variance for the retake. 0.0 means no variance. 1.0 means full variance.")
                 retake_seeds = gr.Textbox(label="retake seeds (default None)", placeholder="", value=None, info="Seed for the retake.")
-                retake_bnt = gr.Button(variant="primary")
+                retake_bnt = gr.Button("Retake", variant="primary")
                 retake_outputs, retake_input_params_json = create_output_ui("Retake")
                 
                 def retake_process_func(json_data, retake_variance, retake_seeds):
@@ -219,13 +219,12 @@ def create_main_demo_ui(
     sample_data_func=dump_func,
 ):
     with gr.Blocks(
-        title="FusicModel 1.0 DEMO",
+        title="ACE-Step Model 1.0 DEMO",
     ) as demo:
         gr.Markdown(
             """
-            <h1 style="text-align: center;">FusicModel 1.0 DEMO</h1>
-            """
-        )
+            <h1 style="text-align: center;">ACE-Step: A Step Towards Music Generation Foundation Model</h1>
+        """)
 
         with gr.Tab("text2music"):
             create_text2music_ui(

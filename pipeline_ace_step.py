@@ -21,7 +21,7 @@ from hf_download import download_repo
 
 from language_segmentation import LangSegment
 from music_dcae.music_dcae_pipeline import MusicDCAE
-from models.fusic_transformer import FusicTransformer2DModel
+from models.ace_step_transformer import ACEStepTransformer2DModel
 from models.lyrics_utils.lyric_tokenizer import VoiceBpeTokenizer
 from apg_guidance import apg_forward, MomentumBuffer, cfg_forward, cfg_zero_star, cfg_double_condition_forward
 import torchaudio
@@ -44,22 +44,22 @@ def ensure_directory_exists(directory):
         os.makedirs(directory)
 
 
-REPO_ID = "timedomain/fusic_v1"
+REPO_ID = "ACE-Step/ACE-Step-v1-3.5B"
 
 
-# class FusicPipeline(DiffusionPipeline):
-class FusicPipeline:
+# class ACEStepPipeline(DiffusionPipeline):
+class ACEStepPipeline:
 
     def __init__(self, checkpoint_dir=None, device_id=0, dtype="bfloat16", text_encoder_checkpoint_path=None, **kwargs):
         # check checkpoint dir exist
-        if checkpoint_dir is None:
+        if not checkpoint_dir:
             checkpoint_dir = os.path.join(os.path.dirname(__file__), "checkpoints")
-            if not os.path.exists(checkpoint_dir):
-                # huggingface download
-                download_repo(
-                    repo_id=REPO_ID,
-                    save_path=checkpoint_dir
-                )
+        if not os.path.exists(checkpoint_dir):
+            # huggingface download
+            download_repo(
+                repo_id=REPO_ID,
+                save_path=checkpoint_dir
+            )
 
         self.checkpoint_dir = checkpoint_dir
         device = torch.device(f"cuda:{device_id}") if torch.cuda.is_available() else torch.device("cpu")
@@ -74,9 +74,9 @@ class FusicPipeline:
         self.music_dcae = MusicDCAE(dcae_checkpoint_path=dcae_checkpoint_path, vocoder_checkpoint_path=vocoder_checkpoint_path)
         self.music_dcae.to(device).eval().to(self.dtype)
 
-        fusic_checkpoint_path = os.path.join(checkpoint_dir, "fusic_transformer")
-        self.fusic_transformer = FusicTransformer2DModel.from_pretrained(fusic_checkpoint_path)
-        self.fusic_transformer.to(device).eval().to(self.dtype)
+        ace_step_checkpoint_path = os.path.join(checkpoint_dir, "ace_step_transformer")
+        self.ace_step_transformer = ACEStepTransformer2DModel.from_pretrained(ace_step_checkpoint_path)
+        self.ace_step_transformer.to(device).eval().to(self.dtype)
 
         lang_segment = LangSegment()
 
@@ -100,7 +100,7 @@ class FusicPipeline:
 
         # compile
         self.music_dcae = torch.compile(self.music_dcae)
-        self.fusic_transformer = torch.compile(self.fusic_transformer)
+        self.ace_step_transformer = torch.compile(self.ace_step_transformer)
         self.text_encoder_model = torch.compile(self.text_encoder_model)
 
     def get_text_embeddings(self, texts, device, text_max_length=256):
@@ -305,10 +305,10 @@ class FusicPipeline:
                 return output
             
             for i in range(l_min, l_max):
-                handler = self.fusic_transformer.lyric_encoder.encoders[i].self_attn.linear_q.register_forward_hook(hook)
+                handler = self.ace_step_transformer.lyric_encoder.encoders[i].self_attn.linear_q.register_forward_hook(hook)
                 handlers.append(handler)
         
-            encoder_hidden_states, encoder_hidden_mask = self.fusic_transformer.encode(**inputs)
+            encoder_hidden_states, encoder_hidden_mask = self.ace_step_transformer.encode(**inputs)
             
             for hook in handlers:
                 hook.remove()
@@ -316,7 +316,7 @@ class FusicPipeline:
             return encoder_hidden_states
 
         # P(speaker, text, lyric)
-        encoder_hidden_states, encoder_hidden_mask = self.fusic_transformer.encode(
+        encoder_hidden_states, encoder_hidden_mask = self.ace_step_transformer.encode(
             encoder_text_hidden_states,
             text_attention_mask,
             speaker_embds,
@@ -338,7 +338,7 @@ class FusicPipeline:
             )
         else:
             # P(null_speaker, null_text, null_lyric)
-            encoder_hidden_states_null, _ = self.fusic_transformer.encode(
+            encoder_hidden_states_null, _ = self.face_step_transformer.encode(
                 torch.zeros_like(encoder_text_hidden_states),
                 text_attention_mask,
                 torch.zeros_like(speaker_embds),
@@ -362,7 +362,7 @@ class FusicPipeline:
                 )
             # P(null_speaker, text, no_lyric)
             else:
-                encoder_hidden_states_no_lyric, _ = self.fusic_transformer.encode(
+                encoder_hidden_states_no_lyric, _ = self.ace_step_transformer.encode(
                     encoder_text_hidden_states,
                     text_attention_mask,
                     torch.zeros_like(speaker_embds),
@@ -378,12 +378,12 @@ class FusicPipeline:
                 return output
             
             for i in range(l_min, l_max):
-                handler = self.fusic_transformer.transformer_blocks[i].attn.to_q.register_forward_hook(hook)
+                handler = self.ace_step_transformer.transformer_blocks[i].attn.to_q.register_forward_hook(hook)
                 handlers.append(handler)
-                handler = self.fusic_transformer.transformer_blocks[i].cross_attn.to_q.register_forward_hook(hook)
+                handler = self.ace_step_transformer.transformer_blocks[i].cross_attn.to_q.register_forward_hook(hook)
                 handlers.append(handler)
 
-            sample = self.fusic_transformer.decode(hidden_states=hidden_states, timestep=timestep, **inputs).sample
+            sample = self.ace_step_transformer.decode(hidden_states=hidden_states, timestep=timestep, **inputs).sample
             
             for hook in handlers:
                 hook.remove()
@@ -409,7 +409,7 @@ class FusicPipeline:
                 timestep = t.expand(latent_model_input.shape[0])
                 output_length = latent_model_input.shape[-1]
                 # P(x|speaker, text, lyric)
-                noise_pred_with_cond = self.fusic_transformer.decode(
+                noise_pred_with_cond = self.ace_step_transformer.decode(
                     hidden_states=latent_model_input,
                     attention_mask=attention_mask,
                     encoder_hidden_states=encoder_hidden_states,
@@ -420,7 +420,7 @@ class FusicPipeline:
 
                 noise_pred_with_only_text_cond = None
                 if do_double_condition_guidance and encoder_hidden_states_no_lyric is not None:
-                    noise_pred_with_only_text_cond = self.fusic_transformer.decode(
+                    noise_pred_with_only_text_cond = self.ace_step_transformer.decode(
                         hidden_states=latent_model_input,
                         attention_mask=attention_mask,
                         encoder_hidden_states=encoder_hidden_states_no_lyric,
@@ -442,7 +442,7 @@ class FusicPipeline:
                         },
                     )
                 else:
-                    noise_pred_uncond = self.fusic_transformer.decode(
+                    noise_pred_uncond = self.ace_step_transformer.decode(
                         hidden_states=latent_model_input,
                         attention_mask=attention_mask,
                         encoder_hidden_states=encoder_hidden_states_null,
@@ -485,7 +485,7 @@ class FusicPipeline:
             else:
                 latent_model_input = latents
                 timestep = t.expand(latent_model_input.shape[0])
-                noise_pred = self.fusic_transformer.decode(
+                noise_pred = self.ace_step_transformer.decode(
                     hidden_states=latent_model_input,
                     attention_mask=attention_mask,
                     encoder_hidden_states=encoder_hidden_states,
@@ -514,7 +514,7 @@ class FusicPipeline:
     def save_wav_file(self, target_wav, idx, save_path=None, sample_rate=48000, format="flac"):
         if save_path is None:
             logger.warning("save_path is None, using default path ./outputs/")
-            base_path = f"./outputs/"
+            base_path = f"./outputs"
             ensure_directory_exists(base_path)
         else:
             base_path = save_path

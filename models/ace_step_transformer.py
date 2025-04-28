@@ -153,7 +153,7 @@ class Transformer2DModelOutput(BaseOutput):
     proj_losses: Optional[Tuple[Tuple[str, torch.Tensor]]] = None
 
 
-class FusicTransformer2DModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOriginalModelMixin):
+class ACEStepTransformer2DModel(ModelMixin, ConfigMixin, PeftAdapterMixin, FromOriginalModelMixin):
     _supports_gradient_checkpointing = True
 
     @register_to_config

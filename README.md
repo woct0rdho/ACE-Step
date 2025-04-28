@@ -1,15 +1,14 @@
-# Fusic
+# ACE-Step
 
-Installation instructions for Fusic.
-## Requirements
+# Installation
 ```bash
-conda create -n fusic python==3.10
-conda activate fusic
+conda create -n ace_step python==3.10
+conda activate ace_step
 pip install -r requirements.txt
 conda install ffmpeg
 ```
 
-## Usage
+# Usage
 ```bash
 python app.py
 ```

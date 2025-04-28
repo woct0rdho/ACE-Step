@@ -19,4 +19,4 @@ num2words==0.5.14
 spacy==3.8.4
 accelerate==1.6.0
 cutlet
-'fugashi[unidic-lite]'
+fugashi[unidic-lite]

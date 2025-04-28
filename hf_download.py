@@ -246,4 +246,4 @@ def download_repo_multi_part(repo: str, save_path: str, headers):
 
 
 if __name__ == "__main__":
-    download_repo("timedomain/fusic_v1", "checkpoints_new")
+    download_repo("timedomain/ace_step_v1", "checkpoints")
