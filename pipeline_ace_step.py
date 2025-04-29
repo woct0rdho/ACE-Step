@@ -27,6 +27,12 @@ from apg_guidance import apg_forward, MomentumBuffer, cfg_forward, cfg_zero_star
 import torchaudio
 
 
+torch.backends.cudnn.benchmark = False
+torch.set_float32_matmul_precision('high')
+torch.backends.cudnn.deterministic = True
+torch.backends.cuda.matmul.allow_tf32 = True
+
+
 SUPPORT_LANGUAGES = {
     "en": 259, "de": 260, "fr": 262, "es": 284, "it": 285, 
     "pt": 286, "pl": 294, "tr": 295, "ru": 267, "cs": 293, 
@@ -63,7 +69,7 @@ class ACEStepPipeline:
 
         self.checkpoint_dir = checkpoint_dir
         device = torch.device(f"cuda:{device_id}") if torch.cuda.is_available() else torch.device("cpu")
-        self.dtype = torch.bfloat16 if dtype == "bfloat16" else torch.float32
+        self.dtype = torch.float16 if dtype == "bfloat16" else torch.float32
         self.device = device
         self.loaded = False
 
@@ -239,6 +245,9 @@ class ACEStepPipeline:
         add_retake_noise=False,
         guidance_scale_text=0.0,
         guidance_scale_lyric=0.0,
+        repaint_start=0,
+        repaint_end=0,
+        src_latents=None,
     ):
 
         logger.info("cfg_type: {}, guidance_scale: {}, omega_scale: {}".format(cfg_type, guidance_scale, omega_scale))
@@ -265,7 +274,10 @@ class ACEStepPipeline:
                 num_train_timesteps=1000,
                 shift=3.0,
             )
+        
         frame_length = int(duration * 44100 / 512 / 8)
+        if src_latents is not None:
+            frame_length = src_latents.shape[-1]
 
         if len(oss_steps) > 0:
             infer_steps = max(oss_steps)
@@ -282,15 +294,29 @@ class ACEStepPipeline:
             timesteps, num_inference_steps = retrieve_timesteps(scheduler, num_inference_steps=infer_steps, device=device, timesteps=None)
         
         target_latents = randn_tensor(shape=(bsz, 8, 16, frame_length), generator=random_generators, device=device, dtype=dtype)
+        
+        is_repaint = False
         if add_retake_noise:
             retake_variance = torch.tensor(retake_variance * math.pi/2).to(device).to(dtype)
             retake_latents = randn_tensor(shape=(bsz, 8, 16, frame_length), generator=retake_random_generators, device=device, dtype=dtype)
+            repaint_start_frame = int(repaint_start * 44100 / 512 / 8)
+            repaint_end_frame = int(repaint_end * 44100 / 512 / 8)
+
+            # retake
+            is_repaint = repaint_end_frame - repaint_start_frame != frame_length
             # to make sure mean = 0, std = 1
-            target_latents = torch.cos(retake_variance) * target_latents + torch.sin(retake_variance) * retake_latents
-        
+            if not is_repaint:
+                target_latents = torch.cos(retake_variance) * target_latents + torch.sin(retake_variance) * retake_latents
+            else:
+                repaint_mask = torch.zeros((bsz, 8, 16, frame_length), device=device, dtype=dtype)
+                repaint_mask[:, :, :, repaint_start_frame:repaint_end_frame] = 1.0
+                repaint_noise = torch.cos(retake_variance) * target_latents + torch.sin(retake_variance) * retake_latents
+                repaint_noise = torch.where(repaint_mask == 1.0, repaint_noise, target_latents)
+                z0 = repaint_noise
+
         attention_mask = torch.ones(bsz, frame_length, device=device, dtype=dtype)
         
-        # guidance interval逻辑
+        # guidance interval
         start_idx = int(num_inference_steps * ((1 - guidance_interval) / 2))
         end_idx = int(num_inference_steps * (guidance_interval / 2 + 0.5))
         logger.info(f"start_idx: {start_idx}, end_idx: {end_idx}, num_inference_steps: {num_inference_steps}")
@@ -495,6 +521,12 @@ class ACEStepPipeline:
                 ).sample
 
             target_latents = scheduler.step(model_output=noise_pred, timestep=t, sample=target_latents, return_dict=False, omega=omega_scale)[0]
+            if is_repaint:
+                t_i = t / 1000
+                x0 = src_latents
+                xt = (1 - t_i) * x0 + t_i * z0
+                target_latents = torch.where(repaint_mask == 1.0, target_latents, xt)
+
         
         return target_latents
 
@@ -525,6 +557,16 @@ class ACEStepPipeline:
         torchaudio.save(output_path_flac, target_wav, sample_rate=sample_rate, format=format, backend="ffmpeg", compression=torchaudio.io.CodecConfig(bit_rate=320000))
         return output_path_flac
 
+    def infer_latents(self, input_audio_path):
+        if input_audio_path is None:
+            return None
+        input_audio, sr = self.music_dcae.load_audio(input_audio_path)
+        input_audio = input_audio.unsqueeze(0)
+        device, dtype = self.device, self.dtype
+        input_audio = input_audio.to(device=device, dtype=dtype)
+        latents, _ = self.music_dcae.encode(input_audio, sr=sr)
+        return latents
+
     def __call__(
         self,
         audio_duration: float = 60.0,
@@ -548,6 +590,9 @@ class ACEStepPipeline:
         retake_seeds: list = None,
         retake_variance: float = 0.5,
         task: str = "text2music",
+        repaint_start: int = 0,
+        repaint_end: int = 0,
+        src_audio_path: str = None,
         save_path: str = None,
         format: str = "flac",
         batch_size: int = 1,
@@ -601,6 +646,18 @@ class ACEStepPipeline:
         preprocess_time_cost = end_time - start_time
         start_time = end_time
 
+        add_retake_noise = task in ("retake", "repaint")
+        # retake equal to repaint
+        if task == "retake":
+            repaint_start = 0
+            repaint_end = audio_duration
+        
+        src_latents = None
+        if task == "repaint":
+            assert src_audio_path is not None, "src_audio_path is required for repaint task"
+            assert os.path.exists(src_audio_path), f"src_audio_path {src_audio_path} does not exist"
+            src_latents = self.infer_latents(src_audio_path)
+
         target_latents = self.text2music_diffusion_process(
             duration=audio_duration,
             encoder_text_hidden_states=encoder_text_hidden_states,
@@ -623,9 +680,12 @@ class ACEStepPipeline:
             use_erg_diffusion=use_erg_diffusion,
             retake_random_generators=retake_random_generators,
             retake_variance=retake_variance,
-            add_retake_noise=task == "retake",
+            add_retake_noise=add_retake_noise,
             guidance_scale_text=guidance_scale_text,
             guidance_scale_lyric=guidance_scale_lyric,
+            repaint_start=repaint_start,
+            repaint_end=repaint_end,
+            src_latents=src_latents,
         )
 
         end_time = time.time()

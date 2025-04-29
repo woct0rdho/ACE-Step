@@ -138,7 +138,117 @@ def create_text2music_ui(
                     outputs=retake_outputs + [retake_input_params_json],
                 )
             with gr.Tab("repainting"):
-                pass
+                retake_variance = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, value=0.2, label="variance", info="Variance for the retake. 0.0 means no variance. 1.0 means full variance.")
+                retake_seeds = gr.Textbox(label="retake seeds (default None)", placeholder="", value=None, info="Seed for the retake.")
+                repaint_start = gr.Slider(minimum=0.0, maximum=240.0, step=0.01, value=0.0, label="Repaint Start Time", interactive=True)
+                repaint_end = gr.Slider(minimum=0.0, maximum=240.0, step=0.01, value=30.0, label="Repaint End Time", interactive=True)
+                repaint_source = gr.Radio(["text2music", "last_repaint", "upload"], value="text2music", label="Repaint Source", elem_id="repaint_source")
+                
+                repaint_source_audio_upload = gr.Audio(label="Upload Audio", type="filepath", visible=False, elem_id="repaint_source_audio_upload")
+                repaint_source.change(
+                    fn=lambda x: gr.update(visible=x == "upload", elem_id="repaint_source_audio_upload"),
+                    inputs=[repaint_source],
+                    outputs=[repaint_source_audio_upload],
+                )
+
+                repaint_bnt = gr.Button("Repaint", variant="primary")
+                repaint_outputs, repaint_input_params_json = create_output_ui("Repaint")
+                
+                def repaint_process_func(
+                    text2music_json_data,
+                    repaint_json_data,
+                    retake_variance,
+                    retake_seeds,
+                    repaint_start,
+                    repaint_end,
+                    repaint_source,
+                    repaint_source_audio_upload,
+                    prompt,
+                    lyrics,
+                    infer_step,
+                    guidance_scale,
+                    scheduler_type,
+                    cfg_type,
+                    omega_scale,
+                    manual_seeds,
+                    guidance_interval,
+                    guidance_interval_decay,
+                    min_guidance_scale,
+                    use_erg_tag,
+                    use_erg_lyric,
+                    use_erg_diffusion,
+                    oss_steps,
+                    guidance_scale_text,
+                    guidance_scale_lyric,
+                ):
+                    if repaint_source == "upload":
+                        src_audio_path = repaint_source_audio_upload
+                        json_data = text2music_json_data
+                    elif repaint_source == "text2music":
+                        json_data = text2music_json_data
+                        src_audio_path = json_data["audio_path"]
+                    elif repaint_source == "last_repaint":
+                        json_data = repaint_json_data
+                        src_audio_path = json_data["audio_path"]
+
+                    return text2music_process_func(
+                        json_data["audio_duration"],
+                        prompt,
+                        lyrics,
+                        infer_step,
+                        guidance_scale,
+                        scheduler_type,
+                        cfg_type,
+                        omega_scale,
+                        manual_seeds,
+                        guidance_interval,
+                        guidance_interval_decay,
+                        min_guidance_scale,
+                        use_erg_tag,
+                        use_erg_lyric,
+                        use_erg_diffusion,
+                        oss_steps,
+                        guidance_scale_text,
+                        guidance_scale_lyric,
+                        retake_seeds=retake_seeds,
+                        retake_variance=retake_variance,
+                        task="repaint",
+                        repaint_start=repaint_start,
+                        repaint_end=repaint_end,
+                        src_audio_path=src_audio_path,
+                    )
+                
+                repaint_bnt.click(
+                    fn=repaint_process_func,
+                    inputs=[
+                        input_params_json,
+                        repaint_input_params_json,
+                        retake_variance,
+                        retake_seeds,
+                        repaint_start,
+                        repaint_end,
+                        repaint_source,
+                        repaint_source_audio_upload,
+                        prompt,
+                        lyrics,
+                        infer_step,
+                        guidance_scale,
+                        scheduler_type,
+                        cfg_type,
+                        omega_scale,
+                        manual_seeds,
+                        guidance_interval,
+                        guidance_interval_decay,
+                        min_guidance_scale,
+                        use_erg_tag,
+                        use_erg_lyric,
+                        use_erg_diffusion,
+                        oss_steps,
+                        guidance_scale_text,
+                        guidance_scale_lyric,
+                    ],
+                    outputs=repaint_outputs + [repaint_input_params_json],
+                )
             with gr.Tab("edit"):
                 pass
 
