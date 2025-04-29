@@ -69,7 +69,7 @@ class ACEStepPipeline:
 
         self.checkpoint_dir = checkpoint_dir
         device = torch.device(f"cuda:{device_id}") if torch.cuda.is_available() else torch.device("cpu")
-        self.dtype = torch.float16 if dtype == "bfloat16" else torch.float32
+        self.dtype = torch.bfloat16 if dtype == "bfloat16" else torch.float32
         self.device = device
         self.loaded = False
         self.torch_compile = torch_compile
@@ -558,6 +558,8 @@ class ACEStepPipeline:
                 repaint_noise = torch.cos(retake_variance) * target_latents + torch.sin(retake_variance) * retake_latents
                 repaint_noise = torch.where(repaint_mask == 1.0, repaint_noise, target_latents)
                 z0 = repaint_noise
+                n_min = int(infer_steps * (1 - retake_variance))
+                zt_edit = src_latents.clone()
 
         attention_mask = torch.ones(bsz, frame_length, device=device, dtype=dtype)
         
@@ -609,7 +611,7 @@ class ACEStepPipeline:
             )
         else:
             # P(null_speaker, null_text, null_lyric)
-            encoder_hidden_states_null, _ = self.face_step_transformer.encode(
+            encoder_hidden_states_null, _ = self.ace_step_transformer.encode(
                 torch.zeros_like(encoder_text_hidden_states),
                 text_attention_mask,
                 torch.zeros_like(speaker_embds),
@@ -660,9 +662,18 @@ class ACEStepPipeline:
                 hook.remove()
             
             return sample
-
     
         for i, t in tqdm(enumerate(timesteps), total=num_inference_steps):
+            
+            if is_repaint:
+                if i < n_min:
+                    continue
+                elif i == n_min:
+                    t_i = t / 1000
+                    zt_src = (1 - t_i) * src_latents + (t_i) * z0
+                    target_latents = zt_edit + zt_src - src_latents
+                    logger.info(f"repaint start from {n_min} add {t_i} level of noise")
+
             # expand the latents if we are doing classifier free guidance
             latents = target_latents
 
@@ -765,14 +776,22 @@ class ACEStepPipeline:
                     timestep=timestep,
                 ).sample
 
-            target_latents = scheduler.step(model_output=noise_pred, timestep=t, sample=target_latents, return_dict=False, omega=omega_scale)[0]
-            if is_repaint:
-                t_i = t / 1000
-                x0 = src_latents
-                xt = (1 - t_i) * x0 + t_i * z0
-                target_latents = torch.where(repaint_mask == 1.0, target_latents, xt)
+            if is_repaint and i >= n_min:
+                t_i = t/1000
+                if i+1 < len(timesteps): 
+                    t_im1 = (timesteps[i+1])/1000
+                else:
+                    t_im1 = torch.zeros_like(t_i).to(t_i.device)
+                dtype = noise_pred.dtype
+                target_latents = target_latents.to(torch.float32)
+                prev_sample = target_latents + (t_im1 - t_i) * noise_pred
+                prev_sample = prev_sample.to(dtype)
+                target_latents = prev_sample
+                zt_src = (1 - t_im1) * src_latents + (t_im1) * z0
+                target_latents = torch.where(repaint_mask == 1.0, target_latents, zt_src)
+            else:
+                target_latents = scheduler.step(model_output=noise_pred, timestep=t, sample=target_latents, return_dict=False, omega=omega_scale)[0]
 
-        
         return target_latents
 
     def latents2audio(self, latents, target_wav_duration_second=30, sample_rate=48000, save_path=None, format="flac"):
@@ -936,7 +955,7 @@ class ACEStepPipeline:
                 target_lyric_token_ids=target_lyric_token_idx,
                 target_lyric_mask=target_lyric_mask,
                 src_latents=src_latents,
-                random_generators=random_generators,
+                random_generators=retake_random_generators, # more diversity
                 infer_steps=infer_step,
                 guidance_scale=guidance_scale,
                 n_min=edit_n_min,
@@ -995,8 +1014,8 @@ class ACEStepPipeline:
 
         input_params_json = {
             "task": task,
-            "prompt": prompt,
-            "lyrics": lyrics,
+            "prompt": prompt if task != "edit" else edit_target_prompt,
+            "lyrics": lyrics if task != "edit" else edit_target_lyrics,
             "audio_duration": audio_duration,
             "infer_step": infer_step,
             "guidance_scale": guidance_scale,

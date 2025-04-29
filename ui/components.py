@@ -139,7 +139,7 @@ def create_text2music_ui(
                 )
             with gr.Tab("repainting"):
                 retake_variance = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, value=0.2, label="variance")
-                retake_seeds = gr.Textbox(label="retake seeds (default None)", placeholder="", value=None)
+                retake_seeds = gr.Textbox(label="repaint seeds (default None)", placeholder="", value=None)
                 repaint_start = gr.Slider(minimum=0.0, maximum=240.0, step=0.01, value=0.0, label="Repaint Start Time", interactive=True)
                 repaint_end = gr.Slider(minimum=0.0, maximum=240.0, step=0.01, value=30.0, label="Repaint End Time", interactive=True)
                 repaint_source = gr.Radio(["text2music", "last_repaint", "upload"], value="text2music", label="Repaint Source", elem_id="repaint_source")
@@ -252,14 +252,15 @@ def create_text2music_ui(
             with gr.Tab("edit"):
                 edit_prompt = gr.Textbox(lines=2, label="Edit Tags", max_lines=4)
                 edit_lyrics = gr.Textbox(lines=9, label="Edit Lyrics", max_lines=13)
-
+                retake_seeds = gr.Textbox(label="edit seeds (default None)", placeholder="", value=None)
+                
                 edit_type = gr.Radio(["only_lyrics", "remix"], value="only_lyrics", label="Edit Type", elem_id="edit_type", info="`only_lyrics` will keep the whole song the same except lyrics difference. Make your diffrence smaller, e.g. one lyrc line change.\nremix can change the song melody and genre")
-                edit_n_min = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, value=0.8, label="edit_n_min", interactive=True)
+                edit_n_min = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, value=0.6, label="edit_n_min", interactive=True)
                 edit_n_max = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, value=1.0, label="edit_n_max", interactive=True)
                 
                 def edit_type_change_func(edit_type):
                     if edit_type == "only_lyrics":
-                        n_min = 0.8
+                        n_min = 0.6
                         n_max = 1.0
                     elif edit_type == "remix":
                         n_min = 0.2
@@ -309,6 +310,7 @@ def create_text2music_ui(
                     oss_steps,
                     guidance_scale_text,
                     guidance_scale_lyric,
+                    retake_seeds,
                 ):
                     if edit_source == "upload":
                         src_audio_path = edit_source_audio_upload
@@ -349,7 +351,8 @@ def create_text2music_ui(
                         edit_target_prompt=edit_prompt,
                         edit_target_lyrics=edit_lyrics,
                         edit_n_min=edit_n_min,
-                        edit_n_max=edit_n_max
+                        edit_n_max=edit_n_max,
+                        retake_seeds=retake_seeds,
                     )
                 
                 edit_bnt.click(
@@ -380,6 +383,7 @@ def create_text2music_ui(
                         oss_steps,
                         guidance_scale_text,
                         guidance_scale_lyric,
+                        retake_seeds,
                     ],
                     outputs=edit_outputs + [edit_input_params_json],
                 )
