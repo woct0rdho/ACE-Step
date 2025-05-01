@@ -541,25 +541,83 @@ class ACEStepPipeline:
         target_latents = randn_tensor(shape=(bsz, 8, 16, frame_length), generator=random_generators, device=device, dtype=dtype)
         
         is_repaint = False
+        is_extend  = False
         if add_retake_noise:
+            n_min = int(infer_steps * (1 - retake_variance))
             retake_variance = torch.tensor(retake_variance * math.pi/2).to(device).to(dtype)
             retake_latents = randn_tensor(shape=(bsz, 8, 16, frame_length), generator=retake_random_generators, device=device, dtype=dtype)
             repaint_start_frame = int(repaint_start * 44100 / 512 / 8)
             repaint_end_frame = int(repaint_end * 44100 / 512 / 8)
-
+            x0 = src_latents
             # retake
-            is_repaint = repaint_end_frame - repaint_start_frame != frame_length
+            is_repaint = (repaint_end_frame - repaint_start_frame != frame_length) 
+            
+            is_extend = (repaint_start_frame < 0) or (repaint_end_frame > frame_length)
+            if is_extend:
+                is_repaint = True
+
+            # TODO: train a mask aware repainting controlnet
             # to make sure mean = 0, std = 1
             if not is_repaint:
                 target_latents = torch.cos(retake_variance) * target_latents + torch.sin(retake_variance) * retake_latents
-            else:
+            elif not is_extend:
+                # if repaint_end_frame 
                 repaint_mask = torch.zeros((bsz, 8, 16, frame_length), device=device, dtype=dtype)
                 repaint_mask[:, :, :, repaint_start_frame:repaint_end_frame] = 1.0
                 repaint_noise = torch.cos(retake_variance) * target_latents + torch.sin(retake_variance) * retake_latents
                 repaint_noise = torch.where(repaint_mask == 1.0, repaint_noise, target_latents)
                 z0 = repaint_noise
-                n_min = int(infer_steps * (1 - retake_variance))
-                zt_edit = src_latents.clone()
+            elif is_extend:
+                to_right_pad_gt_latents = None
+                to_left_pad_gt_latents = None
+                gt_latents = src_latents
+                src_latents_length = gt_latents.shape[-1]
+                max_infer_fame_length = int(240 * 44100 / 512 / 8)
+                left_pad_frame_length = 0
+                right_pad_frame_length = 0
+                right_trim_length = 0
+                left_trim_length = 0
+                if repaint_start_frame < 0:
+                    left_pad_frame_length = abs(repaint_start_frame)
+                    frame_length = left_pad_frame_length + gt_latents.shape[-1]
+                    extend_gt_latents = torch.nn.functional.pad(gt_latents, (left_pad_frame_length, 0), "constant", 0)
+                    if frame_length > max_infer_fame_length:
+                        right_trim_length = frame_length - max_infer_fame_length
+                        extend_gt_latents = extend_gt_latents[:,:,:,:max_infer_fame_length]
+                        to_right_pad_gt_latents = extend_gt_latents[:,:,:,-right_trim_length:]
+                        frame_length = max_infer_fame_length
+                    repaint_start_frame = 0
+                    gt_latents = extend_gt_latents
+                
+                if repaint_end_frame > src_latents_length:
+                    right_pad_frame_length = repaint_end_frame - gt_latents.shape[-1]
+                    frame_length = gt_latents.shape[-1] + right_pad_frame_length
+                    extend_gt_latents = torch.nn.functional.pad(gt_latents, (0, right_pad_frame_length), "constant", 0)
+                    if frame_length > max_infer_fame_length:
+                        left_trim_length = frame_length - max_infer_fame_length
+                        extend_gt_latents = extend_gt_latents[:,:,:,-max_infer_fame_length:]
+                        to_left_pad_gt_latents = extend_gt_latents[:,:,:,:left_trim_length]
+                        frame_length = max_infer_fame_length
+                    repaint_end_frame = frame_length
+                    gt_latents = extend_gt_latents
+
+                repaint_mask = torch.zeros((bsz, 8, 16, frame_length), device=device, dtype=dtype)
+                if left_pad_frame_length > 0:
+                    repaint_mask[:,:,:,:left_pad_frame_length] = 1.0
+                if right_pad_frame_length > 0:
+                    repaint_mask[:,:,:,-right_pad_frame_length:] = 1.0
+                x0 = gt_latents
+                padd_list = []
+                if left_pad_frame_length > 0:
+                    padd_list.append(retake_latents[:, :, :, :left_pad_frame_length])
+                padd_list.append(target_latents[:,:,:,left_trim_length:target_latents.shape[-1]-right_trim_length])
+                if right_pad_frame_length > 0:
+                    padd_list.append(retake_latents[:, :, :, -right_pad_frame_length:])
+                target_latents = torch.cat(padd_list, dim=-1)
+                assert target_latents.shape[-1] == x0.shape[-1], f"{target_latents.shape=} {x0.shape=}"
+
+            zt_edit = x0.clone()
+            z0 = target_latents
 
         attention_mask = torch.ones(bsz, frame_length, device=device, dtype=dtype)
         
@@ -670,8 +728,8 @@ class ACEStepPipeline:
                     continue
                 elif i == n_min:
                     t_i = t / 1000
-                    zt_src = (1 - t_i) * src_latents + (t_i) * z0
-                    target_latents = zt_edit + zt_src - src_latents
+                    zt_src = (1 - t_i) * x0 + (t_i) * z0
+                    target_latents = zt_edit + zt_src - x0
                     logger.info(f"repaint start from {n_min} add {t_i} level of noise")
 
             # expand the latents if we are doing classifier free guidance
@@ -787,11 +845,16 @@ class ACEStepPipeline:
                 prev_sample = target_latents + (t_im1 - t_i) * noise_pred
                 prev_sample = prev_sample.to(dtype)
                 target_latents = prev_sample
-                zt_src = (1 - t_im1) * src_latents + (t_im1) * z0
+                zt_src = (1 - t_im1) * x0 + (t_im1) * z0
                 target_latents = torch.where(repaint_mask == 1.0, target_latents, zt_src)
             else:
                 target_latents = scheduler.step(model_output=noise_pred, timestep=t, sample=target_latents, return_dict=False, omega=omega_scale)[0]
 
+        if is_extend:
+            if to_right_pad_gt_latents is not None:
+                target_latents = torch.cate([target_latents, to_right_pad_gt_latents], dim=-1)
+            if to_left_pad_gt_latents is not None:
+                target_latents = torch.cate([to_right_pad_gt_latents, target_latents], dim=0)
         return target_latents
 
     def latents2audio(self, latents, target_wav_duration_second=30, sample_rate=48000, save_path=None, format="flac"):
@@ -865,6 +928,7 @@ class ACEStepPipeline:
         save_path: str = None,
         format: str = "flac",
         batch_size: int = 1,
+        debug: bool = False,
     ):
 
         start_time = time.time()
@@ -902,7 +966,7 @@ class ACEStepPipeline:
         lyric_token_idx = torch.tensor([0]).repeat(batch_size, 1).to(self.device).long()
         lyric_mask = torch.tensor([0]).repeat(batch_size, 1).to(self.device).long()
         if len(lyrics) > 0:
-            lyric_token_idx = self.tokenize_lyrics(lyrics, debug=True)
+            lyric_token_idx = self.tokenize_lyrics(lyrics, debug=debug)
             lyric_mask = [1] * len(lyric_token_idx)
             lyric_token_idx = torch.tensor(lyric_token_idx).unsqueeze(0).to(self.device).repeat(batch_size, 1)
             lyric_mask = torch.tensor(lyric_mask).unsqueeze(0).to(self.device).repeat(batch_size, 1)
@@ -915,7 +979,7 @@ class ACEStepPipeline:
         preprocess_time_cost = end_time - start_time
         start_time = end_time
 
-        add_retake_noise = task in ("retake", "repaint")
+        add_retake_noise = task in ("retake", "repaint", "extend")
         # retake equal to repaint
         if task == "retake":
             repaint_start = 0
@@ -923,7 +987,7 @@ class ACEStepPipeline:
         
         src_latents = None
         if src_audio_path is not None:
-            assert src_audio_path is not None and task in ("repaint", "edit"), "src_audio_path is required for repaint task"
+            assert src_audio_path is not None and task in ("repaint", "edit", "extend"), "src_audio_path is required for retake/repaint/extend task"
             assert os.path.exists(src_audio_path), f"src_audio_path {src_audio_path} does not exist"
             src_latents = self.infer_latents(src_audio_path)
 
