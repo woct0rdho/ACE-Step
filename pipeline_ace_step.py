@@ -567,7 +567,7 @@ class ACEStepPipeline:
                 repaint_noise = torch.cos(retake_variance) * target_latents + torch.sin(retake_variance) * retake_latents
                 repaint_noise = torch.where(repaint_mask == 1.0, repaint_noise, target_latents)
                 zt_edit = x0.clone()
-                z0 = target_latents
+                z0 = repaint_noise
             elif is_extend:
                 to_right_pad_gt_latents = None
                 to_left_pad_gt_latents = None
