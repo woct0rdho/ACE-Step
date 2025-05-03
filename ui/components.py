@@ -1,4 +1,5 @@
 import gradio as gr
+import librosa
 
 
 TAG_PLACEHOLDER = "funk, pop, soul, rock, melodic, guitar, drums, bass, keyboard, percussion, 105 BPM, energetic, upbeat, groovy, vibrant, dynamic"
@@ -183,7 +184,10 @@ def create_text2music_ui(
                 ):
                     if repaint_source == "upload":
                         src_audio_path = repaint_source_audio_upload
-                        json_data = text2music_json_data
+                        audio_duration = librosa.get_duration(filename=src_audio_path)
+                        json_data = {
+                            "audio_duration": audio_duration
+                        }
                     elif repaint_source == "text2music":
                         json_data = text2music_json_data
                         src_audio_path = json_data["audio_path"]
@@ -314,7 +318,10 @@ def create_text2music_ui(
                 ):
                     if edit_source == "upload":
                         src_audio_path = edit_source_audio_upload
-                        json_data = text2music_json_data
+                        audio_duration = librosa.get_duration(filename=src_audio_path)
+                        json_data = {
+                            "audio_duration": audio_duration
+                        }
                     elif edit_source == "text2music":
                         json_data = text2music_json_data
                         src_audio_path = json_data["audio_path"]
@@ -431,11 +438,15 @@ def create_text2music_ui(
                 ):
                     if extend_source == "upload":
                         src_audio_path = extend_source_audio_upload
-                        json_data = text2music_json_data
+                        # get audio duration
+                        audio_duration = librosa.get_duration(filename=src_audio_path)
+                        json_data = {
+                            "audio_duration": audio_duration
+                        }
                     elif extend_source == "text2music":
                         json_data = text2music_json_data
                         src_audio_path = json_data["audio_path"]
-                    elif extend_source == "last_repaint":
+                    elif extend_source == "last_extend":
                         json_data = extend_input_params_json
                         src_audio_path = json_data["audio_path"]
 
