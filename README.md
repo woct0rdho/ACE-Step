@@ -1,6 +1,114 @@
-# ACE-Step
+<h1 align="center">✨ ACE-Step ✨</h1>
+<h1 align="center">🎵 A Step Towards Music Generation Foundation Model 🎵</h1>
+<p align="center">
+    <a href="https://ace-step.github.io/">Project</a> |
+    <a href="https://huggingface.co/ACE-Step/ACE-Step-v1-3.5B">Checkpoints</a> |
+    <a href="https://huggingface.co/spaces/ACE-Step/ACE-Step">Space Demo</a>
+</p>
 
-# Installation
+---
+<p align="center">
+    <img src="./fig/orgnization_logos.png" width="100%" alt="Org Logo">
+</p>
+
+## 📢 News and Updates
+
+- 🚀 2025.05.06: Open source demo code and model
+- 🔄 Open source training LoRA code
+- 🎮 Open source training ControlNet code
+
+
+## 🏗️ Architecture
+
+<p align="center">
+    <img src="./fig/ACE-Step_framework.png" width="100%" alt="ACE-Step Framework">
+</p>
+
+
+## 📝 Abstract
+
+We introduce ACE-Step, a novel open-source foundation model for music generation that addresses critical limitations in existing approaches, achieving state-of-the-art performance through a holistic architecture design. Current methods face inherent trade-offs among generation speed, musical coherence, and controllability: while LLM-based models (e.g., Yue, SongGen) excel in lyric alignment, they suffer from slow inference and structural artifacts; diffusion models (e.g., DiffRhythm) enable faster synthesis but lack long-range structural coherence.
+
+ACE-Step integrates advances in diffusion-based generation with Sana's Deep Compression AutoEncoder (DCAE) and a lightweight linear transformer, leveraging Mert and m-hubert to align semantic representations (REPA) during training for rapid convergence. Our model synthesizes 4-minute music in 20 seconds on an A100 GPU—15× faster than LLM-based baselines—while achieving exceptional musical coherence and lyric alignment across metrics for melody, harmony, and rhythmic consistency. By preserving fine-grained acoustic details, ACE-Step supports sophisticated control mechanisms, including voice cloning, lyric-editing, remixing, and track generation (e.g., lyric2vocal or Singing2Accompaniment).
+
+We're not aiming to build yet another end-to-end text-to-music solution. Instead, our goal is to create a foundation model for the music AI space—one with a generic, fast, and efficient architecture that makes it easy to train sub-tasks on top of it. This enables the development of new tools that seamlessly integrate into the creative workflows of music artists, producers, and content creators.
+
+In a word, we are building Stable Diffusion Moment in the music.
+
+## ✨ Features
+
+<p align="center">
+    <img src="./fig/application_map.png" width="100%" alt="ACE-Step Framework">
+</p>
+
+### 🎯 Baseline Quality
+
+#### 🌈 Diverse Styles & Genres
+- 🎸 Supports all mainstream music styles with various description formats including short tags, descriptive text, or use-case scenarios
+- 🎷 Capable of generating music across different genres with appropriate instrumentation and style
+
+#### 🌍 Multiple Languages
+- 🗣️ Supports 19 languages with top 10 well-performing languages including:
+  - 🇺🇸 English, 🇨🇳 Chinese, 🇷🇺 Russian, 🇪🇸 Spanish, 🇯🇵 Japanese, 🇩🇪 German, 🇫🇷 French, 🇵🇹 Portuguese, 🇮🇹 Italian, 🇰🇷 Korean
+- ⚠️ Due to data imbalance, less common languages may underperform
+
+#### 🎻 Instrumental Styles
+- 🎹 Supports various instrumental music generation across different genres and styles
+- 🎺 Capable of producing realistic instrumental tracks with appropriate timbre and expression for each instrument
+- 🎼 Can generate complex arrangements with multiple instruments while maintaining musical coherence
+
+#### 🎤 Vocal Techniques
+- 🎙️ Capable of rendering various vocal styles and techniques with good quality
+- 🗣️ Supports different vocal expressions including various singing techniques and styles
+
+### 🎛️ Controllability
+
+#### 🔄 Variations Generation
+- ⚙️ Implemented using training-free, inference-time optimization techniques
+- 🌊 Flow-matching model generates initial noise, then uses trigFlow's noise formula to add additional Gaussian noise
+- 🎚️ Adjustable mixing ratio between original initial noise and new Gaussian noise to control variation degree
+
+#### 🎨 Repainting
+- 🖌️ Implemented by adding noise to the target audio input and applying mask constraints during the ODE process
+- 🔍 When input conditions change from the original generation, only specific aspects can be modified while preserving the rest
+- 🔀 Can be combined with Variations Generation techniques to create localized variations in style, lyrics, or vocals
+
+#### ✏️ Lyric Editing
+- 💡 Innovatively applies flow-edit technology to enable localized lyric modifications while preserving melody, vocals, and accompaniment
+- 🔄 Works with both generated content and uploaded audio, greatly enhancing creative possibilities
+- ℹ️ Current limitation: can only modify small segments of lyrics at once to avoid distortion, but multiple edits can be applied sequentially
+
+### 🚀 Applications
+
+#### 🎤 Lyric2Vocal (LoRA)
+- 🔊 Based on a LoRA fine-tuned on pure vocal data, allowing direct generation of vocal samples from lyrics
+- 🛠️ Offers numerous practical applications such as vocal demos, guide tracks, songwriting assistance, and vocal arrangement experimentation
+- ⏱️ Provides a quick way to test how lyrics might sound when sung, helping songwriters iterate faster
+
+#### 📝 Text2Samples (LoRA)
+- 🎛️ Similar to Lyric2Vocal, but fine-tuned on pure instrumental and sample data
+- 🎵 Capable of generating conceptual music production samples from text descriptions
+- 🧰 Useful for quickly creating instrument loops, sound effects, and musical elements for production
+
+### 🔮 Coming Soon
+
+#### 🎤 RapMachine
+- 🔥 Fine-tuned on pure rap data to create an AI system specialized in rap generation
+- 🏆 Expected capabilities include AI rap battles and narrative expression through rap
+- 📚 Rap has exceptional storytelling and expressive capabilities, offering extraordinary application potential
+
+#### 🎛️ StemGen
+- 🎚️ A controlnet-lora trained on multi-track data to generate individual instrument stems
+- 🎯 Takes a reference track and specified instrument (or instrument reference audio) as input
+- 🎹 Outputs an instrument stem that complements the reference track, such as creating a piano accompaniment for a flute melody or adding jazz drums to a lead guitar
+
+#### 🎤 Singing2Accompaniment
+- 🔄 The reverse process of StemGen, generating a mixed master track from a single vocal track
+- 🎵 Takes a vocal track and specified style as input to produce a complete vocal accompaniment
+- 🎸 Creates full instrumental backing that complements the input vocals, making it easy to add professional-sounding accompaniment to any vocal recording
+
+## 💻 Installation
+
 ```bash
 conda create -n ace_step python==3.10
 conda activate ace_step
@@ -8,7 +116,99 @@ pip install -r requirements.txt
 conda install ffmpeg
 ```
 
-# Usage
+## 🚀 Usage
+
+![Demo Interface](fig/demo_interface.png)
+
+### 🔍 Basic Usage
+
 ```bash
 python app.py
 ```
+
+### ⚙️ Advanced Usage
+
+```bash
+python app.py --checkpoint_path /path/to/checkpoint --port 7865 --device_id 0 --share --bf16
+```
+
+#### 🛠️ Command Line Arguments
+
+- `--checkpoint_path`: Path to the model checkpoint (default: downloads automatically)
+- `--port`: Port to run the Gradio server on (default: 7865)
+- `--device_id`: GPU device ID to use (default: 0)
+- `--share`: Enable Gradio sharing link (default: False)
+- `--bf16`: Use bfloat16 precision for faster inference (default: True)
+
+## 📱 User Interface Guide
+
+The ACE-Step interface provides several tabs for different music generation and editing tasks:
+
+### 📝 Text2Music Tab
+
+1. **📋 Input Fields**:
+   - **🏷️ Tags**: Enter descriptive tags, genres, or scene descriptions separated by commas
+   - **📜 Lyrics**: Enter lyrics with structure tags like [verse], [chorus], and [bridge]
+   - **⏱️ Audio Duration**: Set the desired duration of the generated audio (-1 for random)
+
+2. **⚙️ Settings**:
+   - **🔧 Basic Settings**: Adjust inference steps, guidance scale, and seeds
+   - **🔬 Advanced Settings**: Fine-tune scheduler type, CFG type, ERG settings, and more
+
+3. **🚀 Generation**: Click "Generate" to create music based on your inputs
+
+### 🔄 Retake Tab
+
+- 🎲 Regenerate music with slight variations using different seeds
+- 🎚️ Adjust variance to control how much the retake differs from the original
+
+### 🎨 Repainting Tab
+
+- 🖌️ Selectively regenerate specific sections of the music
+- ⏱️ Specify start and end times for the section to repaint
+- 🔍 Choose the source audio (text2music output, last repaint, or upload)
+
+### ✏️ Edit Tab
+
+- 🔄 Modify existing music by changing tags or lyrics
+- 🎛️ Choose between "only_lyrics" mode (preserves melody) or "remix" mode (changes melody)
+- 🎚️ Adjust edit parameters to control how much of the original is preserved
+
+### 📏 Extend Tab
+
+- ➕ Add music to the beginning or end of an existing piece
+- 📐 Specify left and right extension lengths
+- 🔍 Choose the source audio to extend
+
+## 🔬 Technical Details
+
+ACE-Step uses a two-stage pipeline:
+
+1. **📝 Text Encoding**: Processes text descriptions and lyrics using a UMT5 encoder
+2. **🎵 Music Generation**: Uses a transformer-based diffusion model to generate music latents
+3. **🔊 Audio Decoding**: Converts latents to audio using a music DCAE (Diffusion Convolutional Auto-Encoder)
+
+The system supports various guidance techniques:
+- 🧭 Classifier-Free Guidance (CFG)
+- 🔍 Adaptive Guidance (APG)
+- 🔄 Entropy Rectifying Guidance (ERG)
+
+## 📚 Examples
+
+The `examples/input_params` directory contains sample input parameters that can be used as references for generating music.
+
+## 📜 License
+
+[License information]
+
+## 🙏 Acknowledgements
+
+This project is co-led by ACE Studio and StepFun.
+
+
+## 📖 Citation
+
+If you find this project useful for your research, please consider citing:
+
+```bibtex
+[Citation information]
