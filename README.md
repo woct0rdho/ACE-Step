@@ -16,8 +16,9 @@
 - 🚀 2025.05.06: Open source demo code and model
 
 ## TODOs📋
-- [ ] 🔄 Open source training LoRA code & 🎤 RapMachine lora
-- [ ] 🎮 Open source training ControlNet code & 🎤 Singing2Accompaniment controlnet
+- [ ] 🔁 Release training code
+- [ ] 🔄 Release LoRA training code & 🎤 RapMachine lora
+- [ ] 🎮 Release ControlNet training code & 🎤 Singing2Accompaniment controlnet
 
 ## 🏗️ Architecture
 
@@ -34,7 +35,7 @@ ACE-Step integrates advances in diffusion-based generation with Sana's Deep Comp
 
 We're not aiming to build yet another end-to-end text-to-music solution. Instead, our goal is to create a foundation model for the music AI space—one with a generic, fast, and efficient architecture that makes it easy to train sub-tasks on top of it. This enables the development of new tools that seamlessly integrate into the creative workflows of music artists, producers, and content creators.
 
-In a word, we are building Stable Diffusion Moment in the music.
+In a word, we are building Stable Diffusion Moment for music.
 
 ## ✨ Features
 
@@ -200,7 +201,7 @@ The `examples/input_params` directory contains sample input parameters that can 
 
 ## 📜 License
 
-[License information]
+This project is licensed under [Apache License 2.0](./LICENSE)
 
 ## 🙏 Acknowledgements
 
@@ -211,5 +212,12 @@ This project is co-led by ACE Studio and StepFun.
 
 If you find this project useful for your research, please consider citing:
 
-```bibtex
-[Citation information]
+```BibTeX
+@misc{gong2025acestep,
+  title={ACE-Step: A Step Towards Music Generation Foundation Model},
+  author={Junmin Gong, Wenxiao Zhao, Sen Wang, Shengyuan Xu, Jing Guo}, 
+  howpublished={\url{https://github.com/ace-step/ACE-Step}},
+  year={2025},
+  note={GitHub repository}
+}
+```
