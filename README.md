@@ -116,6 +116,19 @@ pip install -r requirements.txt
 conda install ffmpeg
 ```
 
+## 🖥️ Hardware Performance
+
+We've tested ACE-Step on various hardware configurations with the following throughput results:
+
+| Device | 27 Steps | 60 Steps |
+|--------|-------------------------|-------------------------|
+| NVIDIA A100 | 0.036675| 0.0815 |
+| MacBook M2 Max | | 0.44 | 0.97 |
+| NVIDIA RTX 4090 | 0.029 | 0.064 |
+
+seconds cost per generated audio (seconds/audio)
+For example, to generate a 180-second song, multiply 180 by the seconds cost per generated audio (seconds/audio) for the desired device and step count. This will give you the total time required for the generation process.
+
 ## 🚀 Usage
 
 ![Demo Interface](fig/demo_interface.png)
@@ -180,20 +193,7 @@ The ACE-Step interface provides several tabs for different music generation and 
 - 📐 Specify left and right extension lengths
 - 🔍 Choose the source audio to extend
 
-## 🔬 Technical Details
-
-ACE-Step uses a two-stage pipeline:
-
-1. **📝 Text Encoding**: Processes text descriptions and lyrics using a UMT5 encoder
-2. **🎵 Music Generation**: Uses a transformer-based diffusion model to generate music latents
-3. **🔊 Audio Decoding**: Converts latents to audio using a music DCAE (Diffusion Convolutional Auto-Encoder)
-
-The system supports various guidance techniques:
-- 🧭 Classifier-Free Guidance (CFG)
-- 🔍 Adaptive Guidance (APG)
-- 🔄 Entropy Rectifying Guidance (ERG)
-
-## 📚 Examples
+## Examples
 
 The `examples/input_params` directory contains sample input parameters that can be used as references for generating music.
 

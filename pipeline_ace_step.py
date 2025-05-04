@@ -30,6 +30,7 @@ torch.backends.cudnn.benchmark = False
 torch.set_float32_matmul_precision('high')
 torch.backends.cudnn.deterministic = True
 torch.backends.cuda.matmul.allow_tf32 = True
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 SUPPORT_LANGUAGES = {
@@ -40,7 +41,6 @@ SUPPORT_LANGUAGES = {
 }
 
 structure_pattern = re.compile(r"\[.*?\]")
-
 
 
 def ensure_directory_exists(directory):
@@ -65,7 +65,11 @@ class ACEStepPipeline:
 
         self.checkpoint_dir = checkpoint_dir
         device = torch.device(f"cuda:{device_id}") if torch.cuda.is_available() else torch.device("cpu")
+        if device.type == "cpu" and torch.backends.mps.is_available():
+            device = torch.device("mps")
         self.dtype = torch.bfloat16 if dtype == "bfloat16" else torch.float32
+        if device.type == "mps" and self.dtype == torch.bfloat16:
+            self.dtype = torch.float16
         self.device = device
         self.loaded = False
         self.torch_compile = torch_compile

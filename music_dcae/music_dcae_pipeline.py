@@ -3,7 +3,6 @@ import torch
 from diffusers import AutoencoderDC
 import torchaudio
 import torchvision.transforms as transforms
-import torchaudio
 from diffusers.models.modeling_utils import ModelMixin
 from diffusers.loaders import FromOriginalModelMixin
 from diffusers.configuration_utils import ConfigMixin, register_to_config
@@ -30,7 +29,7 @@ class MusicDCAE(ModelMixin, ConfigMixin, FromOriginalModelMixin):
 
         if source_sample_rate is None:
             source_sample_rate = 48000
-        
+
         self.resampler = torchaudio.transforms.Resample(source_sample_rate, 44100)
 
         self.transform = transforms.Compose([
@@ -95,29 +94,21 @@ class MusicDCAE(ModelMixin, ConfigMixin, FromOriginalModelMixin):
     def decode(self, latents, audio_lengths=None, sr=None):
         latents = latents / self.scale_factor + self.shift_factor
 
-        mels = []
+        pred_wavs = []
 
         for latent in latents:
-            mel = self.dcae.decoder(latent.unsqueeze(0))
-            mels.append(mel)
-        mels = torch.cat(mels, dim=0)
+            mels = self.dcae.decoder(latent.unsqueeze(0))
+            mels = mels * 0.5 + 0.5
+            mels = mels * (self.max_mel_value - self.min_mel_value) + self.min_mel_value
+            wav = self.vocoder.decode(mels[0]).squeeze(1)
 
-        mels = mels * 0.5 + 0.5
-        mels = mels * (self.max_mel_value - self.min_mel_value) + self.min_mel_value
-        bsz, channels, num_mel, mel_width = mels.shape
-        pred_wavs = []
-        for i in range(bsz):
-            mel = mels[i]
-            wav = self.vocoder.decode(mel).squeeze(1)
+            if sr is not None:
+                resampler = torchaudio.transforms.Resample(44100, sr).to(latents.device).to(latents.dtype)
+                wav = resampler(wav)
+            else:
+                sr = 44100
             pred_wavs.append(wav)
 
-        pred_wavs = torch.stack(pred_wavs)
-
-        if sr is not None:
-            resampler = torchaudio.transforms.Resample(44100, sr).to(latents.device).to(latents.dtype)
-            pred_wavs = [resampler(wav) for wav in pred_wavs]
-        else:
-            sr = 44100
         if audio_lengths is not None:
             pred_wavs = [wav[:, :length].cpu() for wav, length in zip(pred_wavs, audio_lengths)]
         return sr, pred_wavs

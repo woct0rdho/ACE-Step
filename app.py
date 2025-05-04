@@ -4,7 +4,7 @@ parser.add_argument("--checkpoint_path", type=str, default="")
 parser.add_argument("--port", type=int, default=7865)
 parser.add_argument("--device_id", type=int, default=0)
 parser.add_argument("--share", action='store_true', default=False)
-parser.add_argument("--bf16", action='store_true', default=True)
+parser.add_argument("--bf16", action='store_true', default=False)
 
 args = parser.parse_args()
 
@@ -19,7 +19,7 @@ from data_sampler import DataSampler
 
 
 def main(args):
- 
+
     model_demo = ACEStepPipeline(
         checkpoint_dir=args.checkpoint_path,
         dtype="bfloat16" if args.bf16 else "float32"
