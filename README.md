@@ -11,6 +11,12 @@
     <img src="./fig/orgnization_logos.png" width="100%" alt="Org Logo">
 </p>
 
+## Table of Contents
+
+- [Features](#-features)
+- [Installation](#-installation)
+- [Usage](#-user-interface-guide)
+
 ## 📢 News and Updates
 
 - 🚀 2025.05.06: Open source demo code and model
