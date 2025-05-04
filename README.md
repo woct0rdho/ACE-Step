@@ -14,9 +14,10 @@
 ## 📢 News and Updates
 
 - 🚀 2025.05.06: Open source demo code and model
-- 🔄 Open source training LoRA code
-- 🎮 Open source training ControlNet code
 
+## TODOs📋
+- [ ] 🔄 Open source training LoRA code & 🎤 RapMachine lora
+- [ ] 🎮 Open source training ControlNet code & 🎤 Singing2Accompaniment controlnet
 
 ## 🏗️ Architecture
 
