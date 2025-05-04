@@ -197,9 +197,11 @@ The system supports various guidance techniques:
 
 The `examples/input_params` directory contains sample input parameters that can be used as references for generating music.
 
-## 📜 License
+## 📜 License&Disclaimer
 
 This project is licensed under [Apache License 2.0](./LICENSE)
+
+ACE-Step enables original music generation across diverse genres, with applications in creative production, education, and entertainment. While designed to support positive and artistic use cases, we acknowledge potential risks such as unintentional copyright infringement due to stylistic similarity, inappropriate blending of cultural elements, and misuse for generating harmful content. To ensure responsible use, we encourage users to verify the originality of generated works, clearly disclose AI involvement, and obtain appropriate permissions when adapting protected styles or materials. By using ACE-Step, you agree to uphold these principles and respect artistic integrity, cultural diversity, and legal compliance. The authors are not responsible for any misuse of the model, including but not limited to copyright violations, cultural insensitivity, or the generation of harmful content.
 
 ## 🙏 Acknowledgements
 
