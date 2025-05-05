@@ -8,7 +8,7 @@
 
 ---
 <p align="center">
-    <img src="./fig/whiteboard_exported_image.png" width="100%" alt="StepFun Logo">
+    <img src="./fig/orgnization_logos.png" width="100%" alt="StepFun Logo">
 </p>
 
 ## Table of Contents
