@@ -15,16 +15,20 @@
 
 - [Features](#-features)
 - [Installation](#-installation)
-- [Usage](#-user-interface-guide)
+- [Usage](#-usage)
+- [Train](#-train)
 
 ## 📢 News and Updates
 
 - 🚀 2025.05.06: Open source demo code and model
 
 ## TODOs📋
-- [ ] 🔁 Release training code
-- [ ] 🔄 Release LoRA training code & 🎤 RapMachine lora
-- [ ] 🎮 Release ControlNet training code & 🎤 Singing2Accompaniment controlnet
+- [x] Release training code 🔥
+- [x] Release LoRA training code 🔥
+- [ ] Release RapMachine lora 🎤
+- [ ] Release ControlNet training code 🔥
+- [ ] Release Singing2Accompaniment controlnet 🎮
+- [ ] Release evaluation performance and technical report  📄
 
 ## 🏗️ Architecture
 
@@ -262,6 +266,88 @@ The ACE-Step interface provides several tabs for different music generation and 
 ## Examples
 
 The `examples/input_params` directory contains sample input parameters that can be used as references for generating music.
+
+## Train
+
+### Prerequisites
+1. Prepare the environment as described in the installation section.
+
+2. If you plan to train a LoRA model, install the PEFT library:
+   ```bash
+   pip install peft
+   ```
+
+3. Prepare your dataset in Huggingface format ([Huggingface Datasets documentation](https://huggingface.co/docs/datasets/index)). The dataset should contain the following fields:
+   - `keys`: Unique identifier for each audio sample
+   - `tags`: List of descriptive tags (e.g., `["pop", "rock"]`)
+   - `norm_lyrics`: Normalized lyrics text
+   - Optional fields:
+     - `speaker_emb_path`: Path to speaker embedding file (use empty string if not available)
+     - `recaption`: Additional tag descriptions in various formats
+
+Example dataset entry:
+```json
+{
+  "keys": "1ce52937-cd1d-456f-967d-0f1072fcbb58",
+  "tags": ["pop", "acoustic", "ballad", "romantic", "emotional"],
+  "speaker_emb_path": "",
+  "norm_lyrics": "I love you, I love you, I love you",
+  "recaption": {
+    "simplified": "pop",
+    "expanded": "pop, acoustic, ballad, romantic, emotional",
+    "descriptive": "The sound is soft and gentle, like a tender breeze on a quiet evening. It's soothing and full of longing.",
+    "use_cases": "Suitable for background music in romantic films or during intimate moments.",
+    "analysis": "pop, ballad, piano, guitar, slow tempo, romantic, emotional"
+  }
+}
+```
+
+### Training Parameters
+
+#### Common Parameters
+- `--dataset_path`: Path to your Huggingface dataset (required)
+- `--checkpoint_dir`: Directory containing the base model checkpoint
+- `--learning_rate`: Learning rate for training (default: 1e-4)
+- `--max_steps`: Maximum number of training steps (default: 2000000)
+- `--precision`: Training precision, e.g., "bf16-mixed" (default) or "fp32"
+- `--devices`: Number of GPUs to use (default: 1)
+- `--num_nodes`: Number of compute nodes to use (default: 1)
+- `--accumulate_grad_batches`: Gradient accumulation steps (default: 1)
+- `--num_workers`: Number of data loading workers (default: 8)
+- `--every_n_train_steps`: Checkpoint saving frequency (default: 2000)
+- `--every_plot_step`: Frequency of generating evaluation samples (default: 2000)
+- `--exp_name`: Experiment name for logging (default: "text2music_train_test")
+- `--logger_dir`: Directory for saving logs (default: "./exps/logs/")
+
+#### Base Model Training
+Train the base model with:
+```bash
+python trainer.py --dataset_path "path/to/your/dataset" --checkpoint_dir "path/to/base/checkpoint" --exp_name "your_experiment_name"
+```
+
+#### LoRA Training
+For LoRA training, you need to provide a LoRA configuration file:
+```bash
+python trainer.py --dataset_path "path/to/your/dataset" --checkpoint_dir "path/to/base/checkpoint" --lora_config_path "path/to/lora_config.json" --exp_name "your_lora_experiment"
+```
+
+Example LoRA configuration file (lora_config.json):
+```json
+{
+  "r": 16,
+  "lora_alpha": 32,
+  "target_modules": ["q_proj", "k_proj", "v_proj", "out_proj"],
+  "lora_dropout": 0.05,
+  "bias": "none"
+}
+```
+
+### Advanced Training Options
+- `--shift`: Flow matching shift parameter (default: 3.0)
+- `--gradient_clip_val`: Gradient clipping value (default: 0.5)
+- `--gradient_clip_algorithm`: Gradient clipping algorithm (default: "norm")
+- `--reload_dataloaders_every_n_epochs`: Frequency to reload dataloaders (default: 1)
+- `--val_check_interval`: Validation check interval (default: None)
 
 ## 📜 License&Disclaimer
 
