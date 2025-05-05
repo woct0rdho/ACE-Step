@@ -124,16 +124,15 @@ conda install ffmpeg
 
 ## 🖥️ Hardware Performance
 
-We've tested ACE-Step on various hardware configurations with the following throughput results:
+We have evaluated ACE-Step across different hardware setups, yielding the following throughput results:
 
 | Device | 27 Steps | 60 Steps |
-|--------|-------------------------|-------------------------|
-| NVIDIA A100 | 0.036675| 0.0815 |
-| MacBook M2 Max | | 0.44 | 0.97 |
-| NVIDIA RTX 4090 | 0.029 | 0.064 |
+|--------|----------|----------|
+| NVIDIA A100 | 27.27x | 12.27x |
+| MacBook M2 Max | 2.27x | 1.03x |
+| NVIDIA RTX 4090 | 34.48x | 15.63x |
 
-seconds cost per generated audio (seconds/audio)
-For example, to generate a 180-second song, multiply 180 by the seconds cost per generated audio (seconds/audio) for the desired device and step count. This will give you the total time required for the generation process.
+We use RTF (Real-Time Factor) to measure the performance of ACE-Step. Higher values indicate faster generation speed. 27.27x means to generate 1 minute of music, it takes 2.2 seconds (60/27.27). The performance is measured on a single GPU with batch size 1 and 27 steps.
 
 ## 🚀 Usage
 
