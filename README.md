@@ -338,7 +338,16 @@ Example LoRA configuration file (lora_config.json):
 {
   "r": 16,
   "lora_alpha": 32,
-  "target_modules": ["q_proj", "k_proj", "v_proj", "out_proj"]
+  "target_modules": [
+    "speaker_embedder",
+    "linear_q",
+    "linear_k",
+    "linear_v",
+    "to_q",
+    "to_k",
+    "to_v",
+    "to_out.0"
+  ]
 }
 ```
 
