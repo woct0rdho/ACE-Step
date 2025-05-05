@@ -338,9 +338,7 @@ Example LoRA configuration file (lora_config.json):
 {
   "r": 16,
   "lora_alpha": 32,
-  "target_modules": ["q_proj", "k_proj", "v_proj", "out_proj"],
-  "lora_dropout": 0.05,
-  "bias": "none"
+  "target_modules": ["q_proj", "k_proj", "v_proj", "out_proj"]
 }
 ```
 
