@@ -143,7 +143,7 @@ class ACEStepPipeline:
         self.music_dcae = MusicDCAE(dcae_checkpoint_path=dcae_checkpoint_path, vocoder_checkpoint_path=vocoder_checkpoint_path)
         self.music_dcae.to(device).eval().to(self.dtype)
 
-        self.ace_step_transformer = ACEStepTransformer2DModel.from_pretrained(ace_step_checkpoint_path)
+        self.ace_step_transformer = ACEStepTransformer2DModel.from_pretrained(ace_step_checkpoint_path, torch_dtype=self.dtype)
         self.ace_step_transformer.to(device).eval().to(self.dtype)
 
         lang_segment = LangSegment()
