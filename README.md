@@ -115,10 +115,33 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 
 ## 💻 Installation
 
+### For MacOS/Linux
+
 ```bash
 conda create -n ace_step python==3.10
 conda activate ace_step
+# Install other requirements
 pip install -r requirements.txt
+
+# Install ffmpeg
+conda install ffmpeg
+```
+
+### Windows
+
+```bash
+conda create -n ace_step python==3.10
+conda activate ace_step
+
+# Install PyTorch, TorchAudio, and TorchVision for Windows
+# replace cu121 with your CUDA version
+# replace torchvision and torchaudio with your version
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+
+# Install other requirements
+pip install -r requirements_win.txt
+
+# Install ffmpeg
 conda install ffmpeg
 ```
 
