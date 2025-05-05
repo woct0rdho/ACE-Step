@@ -206,10 +206,10 @@ python app.py
 ### ⚙️ Advanced Usage
 
 ```bash
-python app.py --checkpoint_path /path/to/checkpoint --port 7865 --device_id 0 --share --bf16
+python app.py --checkpoint_path /path/to/checkpoint --port 7865 --device_id 0 --share true --bf16 true
 ```
 
-If you are MacOS, please use `--bf16 False` to avoid errors.
+If you are MacOS, please use `--bf16 false` to avoid errors.
 
 #### 🛠️ Command Line Arguments
 
