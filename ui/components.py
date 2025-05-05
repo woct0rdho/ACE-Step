@@ -2,8 +2,8 @@ import gradio as gr
 import librosa
 
 
-TAG_PLACEHOLDER = "funk, pop, soul, rock, melodic, guitar, drums, bass, keyboard, percussion, 105 BPM, energetic, upbeat, groovy, vibrant, dynamic"
-LYRIC_PLACEHOLDER = """[verse]
+TAG_DEFAULT = "funk, pop, soul, rock, melodic, guitar, drums, bass, keyboard, percussion, 105 BPM, energetic, upbeat, groovy, vibrant, dynamic"
+LYRIC_DEFAULT = """[verse]
 Neon lights they flicker bright
 City hums in dead of night
 Rhythms pulse through concrete veins
@@ -41,6 +41,8 @@ In this moment we take flight
 """
 
 
+
+
 def create_output_ui(task_name="Text2Music"):
     # For many consumer-grade GPU devices, only one batch can be run
     output_audio1 = gr.Audio(type="filepath", label=f"{task_name} Generated Audio 1")
@@ -69,8 +71,8 @@ def create_text2music_ui(
                 audio_duration = gr.Slider(-1, 240.0, step=0.00001, value=-1, label="Audio Duration", interactive=True, info="-1 means random duration (30 ~ 240).", scale=9)
                 sample_bnt = gr.Button("Sample", variant="primary", scale=1)
 
-            prompt = gr.Textbox(lines=2, label="Tags", max_lines=4, placeholder=TAG_PLACEHOLDER, info="Support tags, descriptions, and scene. Use commas to separate different tags.\ntags and lyrics examples are from ai music generation community")
-            lyrics = gr.Textbox(lines=9, label="Lyrics", max_lines=13, placeholder=LYRIC_PLACEHOLDER, info="Support lyric structure tags like [verse], [chorus], and [bridge] to separate different parts of the lyrics.\nUse [instrumental] or [inst] to generate instrumental music. Not support genre structure tag in lyrics")
+            prompt = gr.Textbox(lines=2, label="Tags", max_lines=4, value=TAG_DEFAULT, info="Support tags, descriptions, and scene. Use commas to separate different tags.\ntags and lyrics examples are from ai music generation community")
+            lyrics = gr.Textbox(lines=9, label="Lyrics", max_lines=13, value=LYRIC_DEFAULT, info="Support lyric structure tags like [verse], [chorus], and [bridge] to separate different parts of the lyrics.\nUse [instrumental] or [inst] to generate instrumental music. Not support genre structure tag in lyrics")
 
             with gr.Accordion("Basic Settings", open=False):
                 infer_step = gr.Slider(minimum=1, maximum=1000, step=1, value=27, label="Infer Steps", interactive=True)
