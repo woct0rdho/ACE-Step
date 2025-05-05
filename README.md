@@ -137,7 +137,7 @@ We use RTF (Real-Time Factor) to measure the performance of ACE-Step. Higher val
 ### Prerequisites
 
 * Make sure you have Python installed. You can download it from [python.org](https://www.python.org/).
-* You will also need either Conda (recommended for complex dependencies) or ensure your Python installation includes `venv`.
+* You will also need either `Conda` (recommended) or `venv`.
 
 ### Environment Setup
 
@@ -157,7 +157,7 @@ It is highly recommended to use a virtual environment to manage project dependen
 
 #### Option 2: Using venv
 
-1.  **Ensure you are using the correct Python version.
+1.  **Ensure you are using the correct Python version.**
 
 2.  **Create the virtual environment** (commonly named `venv`):
     ```bash
@@ -189,7 +189,7 @@ It is highly recommended to use a virtual environment to manage project dependen
     for Windows users:
     ```bash
     # Install PyTorch, TorchAudio, and TorchVision for Windows
-    # replace cu121 with your CUDA version
+    # replace cu126 with your CUDA version
     # replace torchvision and torchaudio with your version
     pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 
@@ -218,10 +218,12 @@ If you are MacOS, please use `--bf16 false` to avoid errors.
 #### 🛠️ Command Line Arguments
 
 - `--checkpoint_path`: Path to the model checkpoint (default: downloads automatically)
+- `--server_name`: IP address or hostname for the Gradio server to bind to (default: '127.0.0.1'). Use '0.0.0.0' to make it accessible from other devices on the network.
 - `--port`: Port to run the Gradio server on (default: 7865)
 - `--device_id`: GPU device ID to use (default: 0)
 - `--share`: Enable Gradio sharing link (default: False)
 - `--bf16`: Use bfloat16 precision for faster inference (default: True)
+- `--torch_compile`: Use `torch.compile()` to optimize the model, speeding up inference (default: False). **Not Support For Windows**
 
 ## 📱 User Interface Guide
 
