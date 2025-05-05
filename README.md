@@ -1,5 +1,5 @@
-<h1 align="center">✨ ACE-Step ✨</h1>
-<h1 align="center">🎵 A Step Towards Music Generation Foundation Model 🎵</h1>
+<h1 align="center">ACE-Step</h1>
+<h1 align="center">A Step Towards Music Generation Foundation Model</h1>
 <p align="center">
     <a href="https://ace-step.github.io/">Project</a> |
     <a href="https://huggingface.co/ACE-Step/ACE-Step-v1-3.5B">Checkpoints</a> |
@@ -8,7 +8,7 @@
 
 ---
 <p align="center">
-    <img src="./fig/orgnization_logos.png" width="100%" alt="Org Logo">
+    <img src="./fig/whiteboard_exported_image.png" width="100%" alt="StepFun Logo">
 </p>
 
 ## Table of Contents
@@ -113,37 +113,6 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 - 🎵 Takes a vocal track and specified style as input to produce a complete vocal accompaniment
 - 🎸 Creates full instrumental backing that complements the input vocals, making it easy to add professional-sounding accompaniment to any vocal recording
 
-## 💻 Installation
-
-### For MacOS/Linux
-
-```bash
-conda create -n ace_step python==3.10
-conda activate ace_step
-# Install other requirements
-pip install -r requirements.txt
-
-# Install ffmpeg
-conda install ffmpeg
-```
-
-### Windows
-
-```bash
-conda create -n ace_step python==3.10
-conda activate ace_step
-
-# Install PyTorch, TorchAudio, and TorchVision for Windows
-# replace cu121 with your CUDA version
-# replace torchvision and torchaudio with your version
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
-
-# Install other requirements
-pip install -r requirements_win.txt
-
-# Install ffmpeg
-conda install ffmpeg
-```
 
 ## 🖥️ Hardware Performance
 
@@ -152,10 +121,77 @@ We have evaluated ACE-Step across different hardware setups, yielding the follow
 | Device | 27 Steps | 60 Steps |
 |--------|----------|----------|
 | NVIDIA A100 | 27.27x | 12.27x |
-| MacBook M2 Max | 2.27x | 1.03x |
 | NVIDIA RTX 4090 | 34.48x | 15.63x |
+| NVIDIA RTX 3090 | 12.76X | 6.48X |
+| MacBook M2 Max | 2.27x | 1.03x |
 
 We use RTF (Real-Time Factor) to measure the performance of ACE-Step. Higher values indicate faster generation speed. 27.27x means to generate 1 minute of music, it takes 2.2 seconds (60/27.27). The performance is measured on a single GPU with batch size 1 and 27 steps.
+
+
+## 💻 Installation
+
+### Prerequisites
+
+* Make sure you have Python installed. You can download it from [python.org](https://www.python.org/).
+* You will also need either Conda (recommended for complex dependencies) or ensure your Python installation includes `venv`.
+
+### Environment Setup
+
+It is highly recommended to use a virtual environment to manage project dependencies and avoid conflicts. Choose **one** of the following methods (Conda or venv):
+
+#### Option 1: Using Conda
+
+1.  **Create the environment** named `ace_step` with Python 3.10:
+    ```bash
+    conda create -n ace_step python=3.10 -y
+    ```
+
+2.  **Activate the environment:**
+    ```bash
+    conda activate ace_step
+    ```
+
+#### Option 2: Using venv
+
+1.  **Ensure you are using the correct Python version.
+
+2.  **Create the virtual environment** (commonly named `venv`):
+    ```bash
+    python -m venv venv 
+    ```
+
+3.  **Activate the environment:**
+    * **On Windows (cmd.exe):**
+        ```bash
+        venv\Scripts\activate.bat
+        ```
+    * **On Windows (PowerShell):**
+        ```powershell
+        .\venv\Scripts\Activate.ps1 
+        ```
+        *(If you encounter execution policy errors, you might need to run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process` first)*
+    * **On Linux / macOS (bash/zsh):**
+        ```bash
+        source venv/bin/activate
+        ```
+
+3.  **Install dependencies** from the `requirements.txt` file:
+
+    for macOS/Linux users:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+    for Windows users:
+    ```bash
+    # Install PyTorch, TorchAudio, and TorchVision for Windows
+    # replace cu121 with your CUDA version
+    # replace torchvision and torchaudio with your version
+    pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+
+    # then install other dependencies
+    pip install -r requirements_win.txt
+    ```
 
 ## 🚀 Usage
 
@@ -172,6 +208,8 @@ python app.py
 ```bash
 python app.py --checkpoint_path /path/to/checkpoint --port 7865 --device_id 0 --share --bf16
 ```
+
+If you are MacOS, please use `--bf16 False` to avoid errors.
 
 #### 🛠️ Command Line Arguments
 

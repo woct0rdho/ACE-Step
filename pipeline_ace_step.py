@@ -158,7 +158,7 @@ class ACEStepPipeline:
         ])
         self.lang_segment = lang_segment
         self.lyric_tokenizer = VoiceBpeTokenizer()
-        text_encoder_model = UMT5EncoderModel.from_pretrained(text_encoder_checkpoint_path).eval()
+        text_encoder_model = UMT5EncoderModel.from_pretrained(text_encoder_checkpoint_path, torch_dtype=self.dtype).eval()
         text_encoder_model = text_encoder_model.to(device).to(self.dtype)
         text_encoder_model.requires_grad_(False)
         self.text_encoder_model = text_encoder_model
@@ -941,7 +941,7 @@ class ACEStepPipeline:
 
         output_path_flac = f"{base_path}/output_{time.strftime('%Y%m%d%H%M%S')}_{idx}.{format}"
         target_wav = target_wav.float()
-        torchaudio.save(output_path_flac, target_wav, sample_rate=sample_rate, format=format, backend="ffmpeg", compression=torchaudio.io.CodecConfig(bit_rate=320000))
+        torchaudio.save(output_path_flac, target_wav, sample_rate=sample_rate, format=format)
         return output_path_flac
 
     def infer_latents(self, input_audio_path):

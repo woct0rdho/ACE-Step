@@ -3,8 +3,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--checkpoint_path", type=str, default="")
 parser.add_argument("--port", type=int, default=7865)
 parser.add_argument("--device_id", type=int, default=0)
-parser.add_argument("--share", action='store_true', default=False)
-parser.add_argument("--bf16", action='store_true', default=False)
+parser.add_argument("--share", type=bool, default=False)
+parser.add_argument("--bf16", type=bool, default=True)
 
 args = parser.parse_args()
 
@@ -31,7 +31,6 @@ def main(args):
         sample_data_func=data_sampler.sample,
     )
     demo.launch(
-        server_name="0.0.0.0",
         server_port=args.port,
         share=args.share
     )
