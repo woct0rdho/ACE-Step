@@ -74,7 +74,7 @@ class Pipeline(LightningModule):
                 from peft import LoraConfig
             except ImportError:
                 raise ImportError("Please install peft library to use LoRA training")
-            with open(lora_config_path) as f:
+            with open(lora_config_path, encoding="utf-8") as f:
                 lora_config = json.load(f)
             lora_config = LoraConfig(**lora_config)
             transformers.add_adapter(adapter_config=lora_config)
@@ -626,7 +626,7 @@ class Pipeline(LightningModule):
                 os.makedirs(save_dir, exist_ok=True)
             torchaudio.save(f"{save_dir}/target_wav_{key}_{i}.flac", target_wav.float().cpu(), sr)
             torchaudio.save(f"{save_dir}/pred_wav_{key}_{i}.flac", pred_wav.float().cpu(), sr)
-            with open(f"{save_dir}/key_prompt_lyric_{key}_{i}.txt", "w") as f:
+            with open(f"{save_dir}/key_prompt_lyric_{key}_{i}.txt", "w", encoding="utf-8") as f:
                 f.write(key_prompt_lyric)
             i += 1
 

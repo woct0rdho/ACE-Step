@@ -1166,7 +1166,7 @@ if __name__ == "__main__":
     )
 
     ndone = 0
-    with open(args.ifile, "r", encoding="utf8") as istream, open(args.ofile, "w+", encoding="utf8") as ostream:
+    with open(args.ifile, "r", encoding="utf-8") as istream, open(args.ofile, "w+", encoding="utf-8") as ostream:
         if args.format == "tsv":
             reader = csv.DictReader(istream, delimiter="\t")
             assert "TEXT" in reader.fieldnames

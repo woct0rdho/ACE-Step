@@ -1172,7 +1172,7 @@ class ACEStepPipeline:
         for output_audio_path in output_paths:
             input_params_json_save_path = output_audio_path.replace(f".{format}", "_input_params.json")
             input_params_json["audio_path"] = output_audio_path
-            with open(input_params_json_save_path, "w") as f:
+            with open(input_params_json_save_path, "w", encoding="utf-8") as f:
                 json.dump(input_params_json, f, indent=4, ensure_ascii=False)
 
         return output_paths + [input_params_json]
