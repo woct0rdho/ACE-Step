@@ -194,7 +194,7 @@ It is highly recommended to use a virtual environment to manage project dependen
     pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 
     # then install other dependencies
-    pip install -r requirements_win.txt
+    pip install -r requirements.txt
     ```
 
 ## 🚀 Usage
@@ -338,9 +338,16 @@ Example LoRA configuration file (lora_config.json):
 {
   "r": 16,
   "lora_alpha": 32,
-  "target_modules": ["q_proj", "k_proj", "v_proj", "out_proj"],
-  "lora_dropout": 0.05,
-  "bias": "none"
+  "target_modules": [
+    "speaker_embedder",
+    "linear_q",
+    "linear_k",
+    "linear_v",
+    "to_q",
+    "to_k",
+    "to_v",
+    "to_out.0"
+  ]
 }
 ```
 
