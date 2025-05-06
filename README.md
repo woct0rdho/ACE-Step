@@ -194,7 +194,7 @@ It is highly recommended to use a virtual environment to manage project dependen
     pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 
     # then install other dependencies
-    pip install -r requirements_win.txt
+    pip install -r requirements.txt
     ```
 
 ## 🚀 Usage
