@@ -123,12 +123,13 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 
 We have evaluated ACE-Step across different hardware setups, yielding the following throughput results:
 
-| Device | 27 Steps | 60 Steps |
-|--------|----------|----------|
-| NVIDIA A100 | 27.27x | 12.27x |
-| NVIDIA RTX 4090 | 34.48x | 15.63x |
-| NVIDIA RTX 3090 | 12.76X | 6.48X |
-| MacBook M2 Max | 2.27x | 1.03x |
+| Device          | RTF (27 steps) | Time to render 1 min audio (27 steps) | RTF (60 steps) | Time to render 1 min audio (60 steps) |
+| --------------- | -------------- | ------------------------------------- | -------------- | ------------------------------------- |
+| NVIDIA RTX 4090 | 34.48 ×        | 1.74 s                                | 15.63 ×        | 3.84 s                                |
+| NVIDIA A100     | 27.27 ×        | 2.20 s                                | 12.27 ×        | 4.89 s                                |
+| NVIDIA RTX 3090 | 12.76 ×        | 4.70 s                                | 6.48 ×         | 9.26 s                                |
+| MacBook M2 Max  | 2.27 ×         | 26.43 s                               | 1.03 ×         | 58.25 s                               |
+
 
 We use RTF (Real-Time Factor) to measure the performance of ACE-Step. Higher values indicate faster generation speed. 27.27x means to generate 1 minute of music, it takes 2.2 seconds (60/27.27). The performance is measured on a single GPU with batch size 1 and 27 steps.
 
