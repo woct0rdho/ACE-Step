@@ -214,7 +214,7 @@ python app.py
 python app.py --checkpoint_path /path/to/checkpoint --port 7865 --device_id 0 --share true --bf16 true
 ```
 
-If you are MacOS, please use `--bf16 false` to avoid errors.
+If you are using MacOS, please use `--bf16 false` to avoid errors.
 
 #### 🛠️ Command Line Arguments
 
@@ -224,7 +224,7 @@ If you are MacOS, please use `--bf16 false` to avoid errors.
 - `--device_id`: GPU device ID to use (default: 0)
 - `--share`: Enable Gradio sharing link (default: False)
 - `--bf16`: Use bfloat16 precision for faster inference (default: True)
-- `--torch_compile`: Use `torch.compile()` to optimize the model, speeding up inference (default: False). **Not Support For Windows**
+- `--torch_compile`: Use `torch.compile()` to optimize the model, speeding up inference (default: False). **Not Supported on Windows**
 
 ## 📱 User Interface Guide
 
