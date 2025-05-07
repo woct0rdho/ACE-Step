@@ -1313,11 +1313,11 @@ class ACEStepPipeline:
 
         if is_extend:
             if to_right_pad_gt_latents is not None:
-                target_latents = torch.cate(
+                target_latents = torch.cat(
                     [target_latents, to_right_pad_gt_latents], dim=-1
                 )
             if to_left_pad_gt_latents is not None:
-                target_latents = torch.cate(
+                target_latents = torch.cat(
                     [to_right_pad_gt_latents, target_latents], dim=0
                 )
         return target_latents
