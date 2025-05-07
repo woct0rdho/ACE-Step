@@ -1,3 +1,11 @@
+"""
+ACE-Step: A Step Towards Music Generation Foundation Model
+
+https://github.com/ace-step/ACE-Step
+
+Apache 2.0 License
+"""
+
 import os
 import torch
 from diffusers import AutoencoderDC
@@ -21,7 +29,12 @@ VOCODER_PRETRAINED_PATH = os.path.join(root_dir, "checkpoints", "music_vocoder")
 
 class MusicDCAE(ModelMixin, ConfigMixin, FromOriginalModelMixin):
     @register_to_config
-    def __init__(self, source_sample_rate=None, dcae_checkpoint_path=DEFAULT_PRETRAINED_PATH, vocoder_checkpoint_path=VOCODER_PRETRAINED_PATH):
+    def __init__(
+        self,
+        source_sample_rate=None,
+        dcae_checkpoint_path=DEFAULT_PRETRAINED_PATH,
+        vocoder_checkpoint_path=VOCODER_PRETRAINED_PATH,
+    ):
         super(MusicDCAE, self).__init__()
 
         self.dcae = AutoencoderDC.from_pretrained(dcae_checkpoint_path)
@@ -32,9 +45,11 @@ class MusicDCAE(ModelMixin, ConfigMixin, FromOriginalModelMixin):
 
         self.resampler = torchaudio.transforms.Resample(source_sample_rate, 44100)
 
-        self.transform = transforms.Compose([
-            transforms.Normalize(0.5, 0.5),
-        ])
+        self.transform = transforms.Compose(
+            [
+                transforms.Normalize(0.5, 0.5),
+            ]
+        )
         self.min_mel_value = -11.0
         self.max_mel_value = 3.0
         self.audio_chunk_size = int(round((1024 * 512 / 44100 * 48000)))
@@ -76,7 +91,9 @@ class MusicDCAE(ModelMixin, ConfigMixin, FromOriginalModelMixin):
 
         max_audio_len = audio.shape[-1]
         if max_audio_len % (8 * 512) != 0:
-            audio = torch.nn.functional.pad(audio, (0, 8 * 512 - max_audio_len % (8 * 512)))
+            audio = torch.nn.functional.pad(
+                audio, (0, 8 * 512 - max_audio_len % (8 * 512))
+            )
 
         mels = self.forward_mel(audio)
         mels = (mels - self.min_mel_value) / (self.max_mel_value - self.min_mel_value)
@@ -86,7 +103,9 @@ class MusicDCAE(ModelMixin, ConfigMixin, FromOriginalModelMixin):
             latent = self.dcae.encoder(mel.unsqueeze(0))
             latents.append(latent)
         latents = torch.cat(latents, dim=0)
-        latent_lengths = (audio_lengths / sr * 44100 / 512 / self.time_dimention_multiple).long()
+        latent_lengths = (
+            audio_lengths / sr * 44100 / 512 / self.time_dimention_multiple
+        ).long()
         latents = (latents - self.shift_factor) * self.scale_factor
         return latents, latent_lengths
 
@@ -103,18 +122,26 @@ class MusicDCAE(ModelMixin, ConfigMixin, FromOriginalModelMixin):
             wav = self.vocoder.decode(mels[0]).squeeze(1)
 
             if sr is not None:
-                resampler = torchaudio.transforms.Resample(44100, sr).to(latents.device).to(latents.dtype)
+                resampler = (
+                    torchaudio.transforms.Resample(44100, sr)
+                    .to(latents.device)
+                    .to(latents.dtype)
+                )
                 wav = resampler(wav)
             else:
                 sr = 44100
             pred_wavs.append(wav)
 
         if audio_lengths is not None:
-            pred_wavs = [wav[:, :length].cpu() for wav, length in zip(pred_wavs, audio_lengths)]
+            pred_wavs = [
+                wav[:, :length].cpu() for wav, length in zip(pred_wavs, audio_lengths)
+            ]
         return sr, pred_wavs
 
     def forward(self, audios, audio_lengths=None, sr=None):
-        latents, latent_lengths = self.encode(audios=audios, audio_lengths=audio_lengths, sr=sr)
+        latents, latent_lengths = self.encode(
+            audios=audios, audio_lengths=audio_lengths, sr=sr
+        )
         sr, pred_wavs = self.decode(latents=latents, audio_lengths=audio_lengths, sr=sr)
         return sr, pred_wavs, latents, latent_lengths
 
@@ -124,7 +151,7 @@ if __name__ == "__main__":
     audio, sr = torchaudio.load("test.wav")
     audio_lengths = torch.tensor([audio.shape[1]])
     audios = audio.unsqueeze(0)
-    
+
     # test encode only
     model = MusicDCAE()
     # latents, latent_lengths = model.encode(audios, audio_lengths)

@@ -1,15 +1,15 @@
-<h1 align="center">ACE-Step</h1>
-<h1 align="center">A Step Towards Music Generation Foundation Model</h1>
-<p align="center">
-    <a href="https://ace-step.github.io/">Project</a> |
-    <a href="https://huggingface.co/ACE-Step/ACE-Step-v1-3.5B">Checkpoints</a> |
-    <a href="https://huggingface.co/spaces/ACE-Step/ACE-Step">Space Demo</a> |
-     <a href="https://discord.gg/rjAZz2xBdG">Discord</a> 
-</p>
+# ACE-Step
+
+A Step Towards Music Generation Foundation Model
+
+[Project Page](https://ace-step.github.io/) |
+[Checkpoints](https://huggingface.co/ACE-Step/ACE-Step-v1-3.5B) |
+[Space Demo](https://huggingface.co/spaces/ACE-Step/ACE-Step) |
+[Discord](https://discord.gg/rjAZz2xBdG) 
 
 ---
 <p align="center">
-    <img src="./fig/orgnization_logos.png" width="100%" alt="StepFun Logo">
+    <img src="./assets/orgnization_logos.png" width="100%" alt="StepFun Logo">
 </p>
 
 ## Table of Contents
@@ -23,7 +23,8 @@
 
 - 🚀 2025.05.06: Open source demo code and model
 
-## TODOs📋
+## 📋 Roadmap
+
 - [x] Release training code 🔥
 - [x] Release LoRA training code 🔥
 - [ ] Release RapMachine lora 🎤
@@ -34,7 +35,7 @@
 ## 🏗️ Architecture
 
 <p align="center">
-    <img src="./fig/ACE-Step_framework.png" width="100%" alt="ACE-Step Framework">
+    <img src="./assets/ACE-Step_framework.png" width="100%" alt="ACE-Step Framework">
 </p>
 
 
@@ -49,7 +50,7 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 ## ✨ Features
 
 <p align="center">
-    <img src="./fig/application_map.png" width="100%" alt="ACE-Step Framework">
+    <img src="./assets/application_map.png" width="100%" alt="ACE-Step Framework">
 </p>
 
 ### 🎯 Baseline Quality
@@ -201,7 +202,7 @@ It is highly recommended to use a virtual environment to manage project dependen
 
 ## 🚀 Usage
 
-![Demo Interface](fig/demo_interface.png)
+![Demo Interface](assets/demo_interface.png)
 
 ### 🔍 Basic Usage
 

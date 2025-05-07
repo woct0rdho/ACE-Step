@@ -64,7 +64,11 @@ def cfg_double_condition_forward(
     guidance_scale_text,
     guidance_scale_lyric,
 ):
-    return (1 - guidance_scale_text) * uncond_output + (guidance_scale_text - guidance_scale_lyric) * only_text_cond_output + guidance_scale_lyric * cond_output 
+    return (
+        (1 - guidance_scale_text) * uncond_output
+        + (guidance_scale_text - guidance_scale_lyric) * only_text_cond_output
+        + guidance_scale_lyric * cond_output
+    )
 
 
 def optimized_scale(positive_flat, negative_flat):
@@ -73,22 +77,31 @@ def optimized_scale(positive_flat, negative_flat):
     dot_product = torch.sum(positive_flat * negative_flat, dim=1, keepdim=True)
 
     # Squared norm of uncondition
-    squared_norm = torch.sum(negative_flat ** 2, dim=1, keepdim=True) + 1e-8
+    squared_norm = torch.sum(negative_flat**2, dim=1, keepdim=True) + 1e-8
 
     # st_star = v_cond^T * v_uncond / ||v_uncond||^2
     st_star = dot_product / squared_norm
-    
+
     return st_star
 
 
-def cfg_zero_star(noise_pred_with_cond, noise_pred_uncond, guidance_scale, i, zero_steps=1, use_zero_init=True):
+def cfg_zero_star(
+    noise_pred_with_cond,
+    noise_pred_uncond,
+    guidance_scale,
+    i,
+    zero_steps=1,
+    use_zero_init=True,
+):
     bsz = noise_pred_with_cond.shape[0]
     positive_flat = noise_pred_with_cond.view(bsz, -1)
     negative_flat = noise_pred_uncond.view(bsz, -1)
     alpha = optimized_scale(positive_flat, negative_flat)
     alpha = alpha.view(bsz, 1, 1, 1)
     if (i <= zero_steps) and use_zero_init:
-        noise_pred = noise_pred_with_cond * 0.
+        noise_pred = noise_pred_with_cond * 0.0
     else:
-        noise_pred = noise_pred_uncond * alpha + guidance_scale * (noise_pred_with_cond - noise_pred_uncond * alpha)
+        noise_pred = noise_pred_uncond * alpha + guidance_scale * (
+            noise_pred_with_cond - noise_pred_uncond * alpha
+        )
     return noise_pred
