@@ -345,7 +345,7 @@ Example LoRA configuration file (lora_config.json):
 - `--reload_dataloaders_every_n_epochs`: Frequency to reload dataloaders (default: 1)
 - `--val_check_interval`: Validation check interval (default: None)
 
-## 📜 License&Disclaimer
+## 📜 License & Disclaimer
 
 This project is licensed under [Apache License 2.0](./LICENSE)
 
