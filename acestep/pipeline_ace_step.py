@@ -1359,7 +1359,6 @@ class ACEStepPipeline:
             f"{base_path}/output_{time.strftime('%Y%m%d%H%M%S')}_{idx}.wav"
         )
         target_wav = target_wav.float()
-        print(target_wav)
         torchaudio.save(
             output_path_wav, target_wav, sample_rate=sample_rate, format=format
         )

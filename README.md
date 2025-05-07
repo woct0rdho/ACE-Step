@@ -1,11 +1,12 @@
-# ACE-Step
-
-A Step Towards Music Generation Foundation Model
-
-[Project Page](https://ace-step.github.io/) |
-[Checkpoints](https://huggingface.co/ACE-Step/ACE-Step-v1-3.5B) |
-[Space Demo](https://huggingface.co/spaces/ACE-Step/ACE-Step) |
-[Discord](https://discord.gg/rjAZz2xBdG) 
+<h1 align="center">ACE-Step</h1>
+<h1 align="center">A Step Towards Music Generation Foundation Model</h1>
+<p align="center">
+    <a href="https://ace-step.github.io/">Project</a> |
+    <a href="https://huggingface.co/ACE-Step/ACE-Step-v1-3.5B">Hugging Face</a> |
+    <a href="https://modelscope.cn/models/ACE-Step/ACE-Step-v1-3.5B">ModelScope</a> |
+    <a href="https://huggingface.co/spaces/ACE-Step/ACE-Step">Space Demo</a> |
+     <a href="https://discord.gg/rjAZz2xBdG">Discord</a> 
+</p>
 
 ---
 <p align="center">
@@ -34,22 +35,72 @@ A Step Towards Music Generation Foundation Model
 
 ## 📦 Installation
 
-### Quick Start
-
+### Clone repositories
 ```bash
-pip install git+https://github.com/ace-step/ACE-Step
+git clone https://github.com/ace-step/ACE-Step.git
+cd ACE-Step
 ```
 
-On Windows, you may need to run the following before running the command above:
+### Prerequisites
+* Make sure you have Python installed. You can download it from [python.org](https://www.python.org/).
+* You will also need either `Conda` (recommended) or `venv`.
+
+### Environment Setup
+
+It is highly recommended to use a virtual environment to manage project dependencies and avoid conflicts. Choose **one** of the following methods (Conda or venv):
+
+#### Option 1: Using Conda
+
+1.  **Create the environment** named `ace_step` with Python 3.10:
+    ```bash
+    conda create -n ace_step python=3.10 -y
+    ```
+
+2.  **Activate the environment:**
+    ```bash
+    conda activate ace_step
+    ```
+
+#### Option 2: Using venv
+
+1.  **Ensure you are using the correct Python version.**
+
+2.  **Create the virtual environment** (commonly named `venv`):
+    ```bash
+    python -m venv venv 
+    ```
+
+3.  **Activate the environment:**
+    * **On Windows (cmd.exe):**
+        ```bash
+        venv\Scripts\activate.bat
+        ```
+    * **On Windows (PowerShell):**
+        ```powershell
+        .\venv\Scripts\Activate.ps1 
+        ```
+        *(If you encounter execution policy errors, you might need to run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process` first)*
+    * **On Linux / macOS (bash/zsh):**
+        ```bash
+        source venv/bin/activate
+        ```
+
+### Install Dependencies
+On Windows, you need to run the following first:
 
 ```bash
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 ```
 
+Then, run
+```bash
+pip install -e .
+```
+
 Then, launch the GUI:
 
 ```bash
-acestep # Launch the GUI
+acestep --port 7865
 ```
 
 The GUI works on Windows, macOS, and Linux.
@@ -174,7 +225,7 @@ We use RTF (Real-Time Factor) to measure the performance of ACE-Step. Higher val
 ### 🔍 Basic Usage
 
 ```bash
-acestep
+acestep --port 7865
 ```
 
 ### ⚙️ Advanced Usage
