@@ -2,7 +2,8 @@
 <h1 align="center">A Step Towards Music Generation Foundation Model</h1>
 <p align="center">
     <a href="https://ace-step.github.io/">Project</a> |
-    <a href="https://huggingface.co/ACE-Step/ACE-Step-v1-3.5B">Checkpoints</a> |
+    <a href="https://huggingface.co/ACE-Step/ACE-Step-v1-3.5B">Hugging Face</a> |
+    <a href="https://modelscope.cn/models/ACE-Step/ACE-Step-v1-3.5B">ModelScope</a> |
     <a href="https://huggingface.co/spaces/ACE-Step/ACE-Step">Space Demo</a> |
      <a href="https://discord.gg/rjAZz2xBdG">Discord</a> 
 </p>
