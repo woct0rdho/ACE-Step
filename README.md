@@ -14,8 +14,8 @@ A Step Towards Music Generation Foundation Model
 
 ## Table of Contents
 
-- [Features](#-features)
 - [Installation](#-installation)
+- [Features](#-features)
 - [Usage](#-usage)
 - [Train](#-train)
 
@@ -183,7 +183,24 @@ acestep
 acestep --checkpoint_path /path/to/checkpoint --port 7865 --device_id 0 --share true --bf16 true
 ```
 
-If you are using MacOS, please use `--bf16 false` to avoid errors.
+If you are using macOS, please use `--bf16 false` to avoid errors.
+
+#### 🔍 API Usage
+
+```python
+from acestep.api import ACEStep
+
+model = ACEStep()
+
+audio_out = model.infer(
+    prompt="upbeat pop, catchy melody, female singer",
+    lyrics="[verse]\nSun is shining bright today\nFeeling happy, come what may",
+    audio_duration=5.0, # 5 seconds
+    infer_step=20        # Fewer steps for speed
+)
+
+audio_out.save_wav("output.wav")
+```
 
 #### 🛠️ Command Line Arguments
 
@@ -235,11 +252,11 @@ The ACE-Step interface provides several tabs for different music generation and 
 - 📐 Specify left and right extension lengths
 - 🔍 Choose the source audio to extend
 
-## Examples
+## 📂 Examples
 
 The `examples/input_params` directory contains sample input parameters that can be used as references for generating music.
 
-## Train
+## 🔨 Train
 
 ### Prerequisites
 1. Prepare the environment as described in the installation section.
@@ -260,17 +277,17 @@ The `examples/input_params` directory contains sample input parameters that can 
 Example dataset entry:
 ```json
 {
-  "keys": "1ce52937-cd1d-456f-967d-0f1072fcbb58",
-  "tags": ["pop", "acoustic", "ballad", "romantic", "emotional"],
-  "speaker_emb_path": "",
-  "norm_lyrics": "I love you, I love you, I love you",
-  "recaption": {
-    "simplified": "pop",
-    "expanded": "pop, acoustic, ballad, romantic, emotional",
-    "descriptive": "The sound is soft and gentle, like a tender breeze on a quiet evening. It's soothing and full of longing.",
-    "use_cases": "Suitable for background music in romantic films or during intimate moments.",
-    "analysis": "pop, ballad, piano, guitar, slow tempo, romantic, emotional"
-  }
+	"keys": "1ce52937-cd1d-456f-967d-0f1072fcbb58",
+	"tags": ["pop", "acoustic", "ballad", "romantic", "emotional"],
+	"speaker_emb_path": "",
+	"norm_lyrics": "I love you, I love you, I love you",
+	"recaption": {
+		"simplified": "pop",
+		"expanded": "pop, acoustic, ballad, romantic, emotional",
+		"descriptive": "The sound is soft and gentle, like a tender breeze on a quiet evening. It's soothing and full of longing.",
+		"use_cases": "Suitable for background music in romantic films or during intimate moments.",
+		"analysis": "pop, ballad, piano, guitar, slow tempo, romantic, emotional"
+	}
 }
 ```
 
@@ -306,18 +323,18 @@ python trainer.py --dataset_path "path/to/your/dataset" --checkpoint_dir "path/t
 Example LoRA configuration file (lora_config.json):
 ```json
 {
-  "r": 16,
-  "lora_alpha": 32,
-  "target_modules": [
-    "speaker_embedder",
-    "linear_q",
-    "linear_k",
-    "linear_v",
-    "to_q",
-    "to_k",
-    "to_v",
-    "to_out.0"
-  ]
+	"r": 16,
+	"lora_alpha": 32,
+	"target_modules": [
+		"speaker_embedder",
+		"linear_q",
+		"linear_k",
+		"linear_v",
+		"to_q",
+		"to_k",
+		"to_v",
+		"to_out.0"
+	]
 }
 ```
 
@@ -345,10 +362,10 @@ If you find this project useful for your research, please consider citing:
 
 ```BibTeX
 @misc{gong2025acestep,
-  title={ACE-Step: A Step Towards Music Generation Foundation Model},
-  author={Junmin Gong, Wenxiao Zhao, Sen Wang, Shengyuan Xu, Jing Guo}, 
-  howpublished={\url{https://github.com/ace-step/ACE-Step}},
-  year={2025},
-  note={GitHub repository}
+	title={ACE-Step: A Step Towards Music Generation Foundation Model},
+	author={Junmin Gong, Wenxiao Zhao, Sen Wang, Shengyuan Xu, Jing Guo}, 
+	howpublished={\url{https://github.com/ace-step/ACE-Step}},
+	year={2025},
+	note={GitHub repository}
 }
 ```
