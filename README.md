@@ -27,17 +27,38 @@ A Step Towards Music Generation Foundation Model
 
 - [x] Release training code 🔥
 - [x] Release LoRA training code 🔥
-- [ ] Release RapMachine lora 🎤
+- [ ] Release RapMachine LoRA 🎤
 - [ ] Release ControlNet training code 🔥
-- [ ] Release Singing2Accompaniment controlnet 🎮
-- [ ] Release evaluation performance and technical report  📄
+- [ ] Release Singing2Accompaniment ControlNet 🎮
+- [ ] Release evaluation performance and technical report 📄
+
+## 📦 Installation
+
+### Quick Start
+
+```bash
+pip install ace-step
+```
+
+On Windows, you may need to run the following before running the command above:
+
+```bash
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+```
+
+Then, launch the GUI:
+
+```bash
+acestep # Launch the GUI
+```
+
+The GUI works on Windows, macOS, and Linux.
 
 ## 🏗️ Architecture
 
 <p align="center">
     <img src="./assets/ACE-Step_framework.png" width="100%" alt="ACE-Step Framework">
 </p>
-
 
 ## 📝 Abstract
 
@@ -56,36 +77,43 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 ### 🎯 Baseline Quality
 
 #### 🌈 Diverse Styles & Genres
+
 - 🎸 Supports all mainstream music styles with various description formats including short tags, descriptive text, or use-case scenarios
 - 🎷 Capable of generating music across different genres with appropriate instrumentation and style
 
 #### 🌍 Multiple Languages
+
 - 🗣️ Supports 19 languages with top 10 well-performing languages including:
   - 🇺🇸 English, 🇨🇳 Chinese, 🇷🇺 Russian, 🇪🇸 Spanish, 🇯🇵 Japanese, 🇩🇪 German, 🇫🇷 French, 🇵🇹 Portuguese, 🇮🇹 Italian, 🇰🇷 Korean
 - ⚠️ Due to data imbalance, less common languages may underperform
 
 #### 🎻 Instrumental Styles
+
 - 🎹 Supports various instrumental music generation across different genres and styles
 - 🎺 Capable of producing realistic instrumental tracks with appropriate timbre and expression for each instrument
 - 🎼 Can generate complex arrangements with multiple instruments while maintaining musical coherence
 
 #### 🎤 Vocal Techniques
+
 - 🎙️ Capable of rendering various vocal styles and techniques with good quality
 - 🗣️ Supports different vocal expressions including various singing techniques and styles
 
 ### 🎛️ Controllability
 
 #### 🔄 Variations Generation
+
 - ⚙️ Implemented using training-free, inference-time optimization techniques
 - 🌊 Flow-matching model generates initial noise, then uses trigFlow's noise formula to add additional Gaussian noise
 - 🎚️ Adjustable mixing ratio between original initial noise and new Gaussian noise to control variation degree
 
 #### 🎨 Repainting
+
 - 🖌️ Implemented by adding noise to the target audio input and applying mask constraints during the ODE process
 - 🔍 When input conditions change from the original generation, only specific aspects can be modified while preserving the rest
 - 🔀 Can be combined with Variations Generation techniques to create localized variations in style, lyrics, or vocals
 
 #### ✏️ Lyric Editing
+
 - 💡 Innovatively applies flow-edit technology to enable localized lyric modifications while preserving melody, vocals, and accompaniment
 - 🔄 Works with both generated content and uploaded audio, greatly enhancing creative possibilities
 - ℹ️ Current limitation: can only modify small segments of lyrics at once to avoid distortion, but multiple edits can be applied sequentially
@@ -93,11 +121,13 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 ### 🚀 Applications
 
 #### 🎤 Lyric2Vocal (LoRA)
+
 - 🔊 Based on a LoRA fine-tuned on pure vocal data, allowing direct generation of vocal samples from lyrics
 - 🛠️ Offers numerous practical applications such as vocal demos, guide tracks, songwriting assistance, and vocal arrangement experimentation
 - ⏱️ Provides a quick way to test how lyrics might sound when sung, helping songwriters iterate faster
 
 #### 📝 Text2Samples (LoRA)
+
 - 🎛️ Similar to Lyric2Vocal, but fine-tuned on pure instrumental and sample data
 - 🎵 Capable of generating conceptual music production samples from text descriptions
 - 🧰 Useful for quickly creating instrument loops, sound effects, and musical elements for production
@@ -105,16 +135,19 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 ### 🔮 Coming Soon
 
 #### 🎤 RapMachine
+
 - 🔥 Fine-tuned on pure rap data to create an AI system specialized in rap generation
 - 🏆 Expected capabilities include AI rap battles and narrative expression through rap
 - 📚 Rap has exceptional storytelling and expressive capabilities, offering extraordinary application potential
 
 #### 🎛️ StemGen
+
 - 🎚️ A controlnet-lora trained on multi-track data to generate individual instrument stems
 - 🎯 Takes a reference track and specified instrument (or instrument reference audio) as input
 - 🎹 Outputs an instrument stem that complements the reference track, such as creating a piano accompaniment for a flute melody or adding jazz drums to a lead guitar
 
 #### 🎤 Singing2Accompaniment
+
 - 🔄 The reverse process of StemGen, generating a mixed master track from a single vocal track
 - 🎵 Takes a vocal track and specified style as input to produce a complete vocal accompaniment
 - 🎸 Creates full instrumental backing that complements the input vocals, making it easy to add professional-sounding accompaniment to any vocal recording
@@ -134,72 +167,6 @@ We have evaluated ACE-Step across different hardware setups, yielding the follow
 
 We use RTF (Real-Time Factor) to measure the performance of ACE-Step. Higher values indicate faster generation speed. 27.27x means to generate 1 minute of music, it takes 2.2 seconds (60/27.27). The performance is measured on a single GPU with batch size 1 and 27 steps.
 
-
-## 💻 Installation
-
-### Prerequisites
-
-* Make sure you have Python installed. You can download it from [python.org](https://www.python.org/).
-* You will also need either `Conda` (recommended) or `venv`.
-
-### Environment Setup
-
-It is highly recommended to use a virtual environment to manage project dependencies and avoid conflicts. Choose **one** of the following methods (Conda or venv):
-
-#### Option 1: Using Conda
-
-1.  **Create the environment** named `ace_step` with Python 3.10:
-    ```bash
-    conda create -n ace_step python=3.10 -y
-    ```
-
-2.  **Activate the environment:**
-    ```bash
-    conda activate ace_step
-    ```
-
-#### Option 2: Using venv
-
-1.  **Ensure you are using the correct Python version.**
-
-2.  **Create the virtual environment** (commonly named `venv`):
-    ```bash
-    python -m venv venv 
-    ```
-
-3.  **Activate the environment:**
-    * **On Windows (cmd.exe):**
-        ```bash
-        venv\Scripts\activate.bat
-        ```
-    * **On Windows (PowerShell):**
-        ```powershell
-        .\venv\Scripts\Activate.ps1 
-        ```
-        *(If you encounter execution policy errors, you might need to run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process` first)*
-    * **On Linux / macOS (bash/zsh):**
-        ```bash
-        source venv/bin/activate
-        ```
-
-3.  **Install dependencies** from the `requirements.txt` file:
-
-    for macOS/Linux users:
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-    for Windows users:
-    ```bash
-    # Install PyTorch, TorchAudio, and TorchVision for Windows
-    # replace cu126 with your CUDA version
-    # replace torchvision and torchaudio with your version
-    pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
-
-    # then install other dependencies
-    pip install -r requirements.txt
-    ```
-
 ## 🚀 Usage
 
 ![Demo Interface](assets/demo_interface.png)
@@ -207,13 +174,13 @@ It is highly recommended to use a virtual environment to manage project dependen
 ### 🔍 Basic Usage
 
 ```bash
-python app.py
+acestep
 ```
 
 ### ⚙️ Advanced Usage
 
 ```bash
-python app.py --checkpoint_path /path/to/checkpoint --port 7865 --device_id 0 --share true --bf16 true
+acestep --checkpoint_path /path/to/checkpoint --port 7865 --device_id 0 --share true --bf16 true
 ```
 
 If you are using MacOS, please use `--bf16 false` to avoid errors.
