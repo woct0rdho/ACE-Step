@@ -1,3 +1,11 @@
+"""
+ACE-Step: A Step Towards Music Generation Foundation Model
+
+https://github.com/ace-step/ACE-Step
+
+Apache 2.0 License
+"""
+
 import librosa
 import torch
 from torch import nn
@@ -132,13 +140,11 @@ class ConvNeXtBlock(nn.Module):
         self.act = nn.GELU()
         self.pwconv2 = nn.Linear(int(mlp_ratio * dim), dim)
         self.gamma = (
-            nn.Parameter(layer_scale_init_value *
-                         torch.ones((dim)), requires_grad=True)
+            nn.Parameter(layer_scale_init_value * torch.ones((dim)), requires_grad=True)
             if layer_scale_init_value > 0
             else None
         )
-        self.drop_path = DropPath(
-            drop_path) if drop_path > 0.0 else nn.Identity()
+        self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
 
     def forward(self, x, apply_residual: bool = True):
         input = x
@@ -367,8 +373,7 @@ class HiFiGANGenerator(nn.Module):
         upsample_rates: Tuple[int] = (8, 8, 2, 2, 2),
         upsample_kernel_sizes: Tuple[int] = (16, 16, 8, 2, 2),
         resblock_kernel_sizes: Tuple[int] = (3, 7, 11),
-        resblock_dilation_sizes: Tuple[Tuple[int]] = (
-            (1, 3, 5), (1, 3, 5), (1, 3, 5)),
+        resblock_dilation_sizes: Tuple[Tuple[int]] = ((1, 3, 5), (1, 3, 5), (1, 3, 5)),
         num_mels: int = 128,
         upsample_initial_channel: int = 512,
         use_template: bool = True,
@@ -417,7 +422,7 @@ class HiFiGANGenerator(nn.Module):
                 continue
 
             if i + 1 < len(upsample_rates):
-                stride_f0 = np.prod(upsample_rates[i + 1:])
+                stride_f0 = np.prod(upsample_rates[i + 1 :])
                 self.noise_convs.append(
                     Conv1d(
                         1,
@@ -485,7 +490,7 @@ class HiFiGANGenerator(nn.Module):
 
 
 class ADaMoSHiFiGANV1(ModelMixin, ConfigMixin, FromOriginalModelMixin):
-    
+
     @register_to_config
     def __init__(
         self,
@@ -498,7 +503,11 @@ class ADaMoSHiFiGANV1(ModelMixin, ConfigMixin, FromOriginalModelMixin):
         upsample_kernel_sizes: Tuple[int] = (8, 8, 4, 4, 4, 4, 4),
         resblock_kernel_sizes: Tuple[int] = (3, 7, 11, 13),
         resblock_dilation_sizes: Tuple[Tuple[int]] = (
-            (1, 3, 5), (1, 3, 5), (1, 3, 5), (1, 3, 5)),
+            (1, 3, 5),
+            (1, 3, 5),
+            (1, 3, 5),
+            (1, 3, 5),
+        ),
         num_mels: int = 512,
         upsample_initial_channel: int = 1024,
         use_template: bool = False,
@@ -555,7 +564,7 @@ class ADaMoSHiFiGANV1(ModelMixin, ConfigMixin, FromOriginalModelMixin):
     @torch.no_grad()
     def encode(self, x):
         return self.mel_transform(x)
-    
+
     def forward(self, mel):
         y = self.backbone(mel)
         y = self.head(y)
@@ -565,12 +574,14 @@ class ADaMoSHiFiGANV1(ModelMixin, ConfigMixin, FromOriginalModelMixin):
 if __name__ == "__main__":
     import soundfile as sf
 
-    x = "test_audio.flac"
-    model = ADaMoSHiFiGANV1.from_pretrained("./checkpoints/music_vocoder", local_files_only=True)
+    x = "test_audio.wav"
+    model = ADaMoSHiFiGANV1.from_pretrained(
+        "./checkpoints/music_vocoder", local_files_only=True
+    )
 
     wav, sr = librosa.load(x, sr=44100, mono=True)
     wav = torch.from_numpy(wav).float()[None]
     mel = model.encode(wav)
 
     wav = model.decode(mel)[0].mT
-    sf.write("test_audio_vocoder_rec.flac", wav.cpu().numpy(), 44100)
+    sf.write("test_audio_vocoder_rec.wav", wav.cpu().numpy(), 44100)

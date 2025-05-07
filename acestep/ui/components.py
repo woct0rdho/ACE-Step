@@ -1,3 +1,11 @@
+"""
+ACE-Step: A Step Towards Music Generation Foundation Model
+
+https://github.com/ace-step/ACE-Step
+
+Apache 2.0 License
+"""
+
 import gradio as gr
 import librosa
 
@@ -41,8 +49,6 @@ In this moment we take flight
 """
 
 
-
-
 def create_output_ui(task_name="Text2Music"):
     # For many consumer-grade GPU devices, only one batch can be run
     output_audio1 = gr.Audio(type="filepath", label=f"{task_name} Generated Audio 1")
@@ -68,41 +74,162 @@ def create_text2music_ui(
         with gr.Column():
             with gr.Row(equal_height=True):
                 # add markdown, tags and lyrics examples are from ai music generation community
-                audio_duration = gr.Slider(-1, 240.0, step=0.00001, value=-1, label="Audio Duration", interactive=True, info="-1 means random duration (30 ~ 240).", scale=9)
+                audio_duration = gr.Slider(
+                    -1,
+                    240.0,
+                    step=0.00001,
+                    value=-1,
+                    label="Audio Duration",
+                    interactive=True,
+                    info="-1 means random duration (30 ~ 240).",
+                    scale=9,
+                )
                 sample_bnt = gr.Button("Sample", variant="primary", scale=1)
 
-            prompt = gr.Textbox(lines=2, label="Tags", max_lines=4, value=TAG_DEFAULT, info="Support tags, descriptions, and scene. Use commas to separate different tags.\ntags and lyrics examples are from ai music generation community")
-            lyrics = gr.Textbox(lines=9, label="Lyrics", max_lines=13, value=LYRIC_DEFAULT, info="Support lyric structure tags like [verse], [chorus], and [bridge] to separate different parts of the lyrics.\nUse [instrumental] or [inst] to generate instrumental music. Not support genre structure tag in lyrics")
+            prompt = gr.Textbox(
+                lines=2,
+                label="Tags",
+                max_lines=4,
+                value=TAG_DEFAULT,
+                info="Support tags, descriptions, and scene. Use commas to separate different tags.\ntags and lyrics examples are from ai music generation community",
+            )
+            lyrics = gr.Textbox(
+                lines=9,
+                label="Lyrics",
+                max_lines=13,
+                value=LYRIC_DEFAULT,
+                info="Support lyric structure tags like [verse], [chorus], and [bridge] to separate different parts of the lyrics.\nUse [instrumental] or [inst] to generate instrumental music. Not support genre structure tag in lyrics",
+            )
 
             with gr.Accordion("Basic Settings", open=False):
-                infer_step = gr.Slider(minimum=1, maximum=1000, step=1, value=27, label="Infer Steps", interactive=True)
-                guidance_scale = gr.Slider(minimum=0.0, maximum=200.0, step=0.1, value=15.0, label="Guidance Scale", interactive=True, info="When guidance_scale_lyric > 1 and guidance_scale_text > 1, the guidance scale will not be applied.")
-                guidance_scale_text = gr.Slider(minimum=0.0, maximum=10.0, step=0.1, value=0.0, label="Guidance Scale Text", interactive=True, info="Guidance scale for text condition. It can only apply to cfg. set guidance_scale_text=5.0, guidance_scale_lyric=1.5 for start")
-                guidance_scale_lyric = gr.Slider(minimum=0.0, maximum=10.0, step=0.1, value=0.0, label="Guidance Scale Lyric", interactive=True)
+                infer_step = gr.Slider(
+                    minimum=1,
+                    maximum=1000,
+                    step=1,
+                    value=27,
+                    label="Infer Steps",
+                    interactive=True,
+                )
+                guidance_scale = gr.Slider(
+                    minimum=0.0,
+                    maximum=200.0,
+                    step=0.1,
+                    value=15.0,
+                    label="Guidance Scale",
+                    interactive=True,
+                    info="When guidance_scale_lyric > 1 and guidance_scale_text > 1, the guidance scale will not be applied.",
+                )
+                guidance_scale_text = gr.Slider(
+                    minimum=0.0,
+                    maximum=10.0,
+                    step=0.1,
+                    value=0.0,
+                    label="Guidance Scale Text",
+                    interactive=True,
+                    info="Guidance scale for text condition. It can only apply to cfg. set guidance_scale_text=5.0, guidance_scale_lyric=1.5 for start",
+                )
+                guidance_scale_lyric = gr.Slider(
+                    minimum=0.0,
+                    maximum=10.0,
+                    step=0.1,
+                    value=0.0,
+                    label="Guidance Scale Lyric",
+                    interactive=True,
+                )
 
-                manual_seeds = gr.Textbox(label="manual seeds (default None)", placeholder="1,2,3,4", value=None, info="Seed for the generation")
+                manual_seeds = gr.Textbox(
+                    label="manual seeds (default None)",
+                    placeholder="1,2,3,4",
+                    value=None,
+                    info="Seed for the generation",
+                )
 
             with gr.Accordion("Advanced Settings", open=False):
-                scheduler_type = gr.Radio(["euler", "heun"], value="euler", label="Scheduler Type", elem_id="scheduler_type", info="Scheduler type for the generation. euler is recommended. heun will take more time.")
-                cfg_type = gr.Radio(["cfg", "apg", "cfg_star"], value="apg", label="CFG Type", elem_id="cfg_type", info="CFG type for the generation. apg is recommended. cfg and cfg_star are almost the same.")
-                use_erg_tag = gr.Checkbox(label="use ERG for tag", value=True, info="Use Entropy Rectifying Guidance for tag. It will multiple a temperature to the attention to make a weaker tag condition and make better diversity.")
-                use_erg_lyric = gr.Checkbox(label="use ERG for lyric", value=True, info="The same but apply to lyric encoder's attention.")
-                use_erg_diffusion = gr.Checkbox(label="use ERG for diffusion", value=True, info="The same but apply to diffusion model's attention.")
+                scheduler_type = gr.Radio(
+                    ["euler", "heun"],
+                    value="euler",
+                    label="Scheduler Type",
+                    elem_id="scheduler_type",
+                    info="Scheduler type for the generation. euler is recommended. heun will take more time.",
+                )
+                cfg_type = gr.Radio(
+                    ["cfg", "apg", "cfg_star"],
+                    value="apg",
+                    label="CFG Type",
+                    elem_id="cfg_type",
+                    info="CFG type for the generation. apg is recommended. cfg and cfg_star are almost the same.",
+                )
+                use_erg_tag = gr.Checkbox(
+                    label="use ERG for tag",
+                    value=True,
+                    info="Use Entropy Rectifying Guidance for tag. It will multiple a temperature to the attention to make a weaker tag condition and make better diversity.",
+                )
+                use_erg_lyric = gr.Checkbox(
+                    label="use ERG for lyric",
+                    value=True,
+                    info="The same but apply to lyric encoder's attention.",
+                )
+                use_erg_diffusion = gr.Checkbox(
+                    label="use ERG for diffusion",
+                    value=True,
+                    info="The same but apply to diffusion model's attention.",
+                )
 
-                omega_scale = gr.Slider(minimum=-100.0, maximum=100.0, step=0.1, value=10.0, label="Granularity Scale", interactive=True, info="Granularity scale for the generation. Higher values can reduce artifacts")
+                omega_scale = gr.Slider(
+                    minimum=-100.0,
+                    maximum=100.0,
+                    step=0.1,
+                    value=10.0,
+                    label="Granularity Scale",
+                    interactive=True,
+                    info="Granularity scale for the generation. Higher values can reduce artifacts",
+                )
 
-                guidance_interval = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, value=0.5, label="Guidance Interval", interactive=True, info="Guidance interval for the generation. 0.5 means only apply guidance in the middle steps (0.25 * infer_steps to 0.75 * infer_steps)")
-                guidance_interval_decay = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, value=0.0, label="Guidance Interval Decay", interactive=True, info="Guidance interval decay for the generation. Guidance scale will decay from guidance_scale to min_guidance_scale in the interval. 0.0 means no decay.")
-                min_guidance_scale = gr.Slider(minimum=0.0, maximum=200.0, step=0.1, value=3.0, label="Min Guidance Scale", interactive=True, info="Min guidance scale for guidance interval decay's end scale")
-                oss_steps = gr.Textbox(label="OSS Steps", placeholder="16, 29, 52, 96, 129, 158, 172, 183, 189, 200", value=None, info="Optimal Steps for the generation. But not test well")
+                guidance_interval = gr.Slider(
+                    minimum=0.0,
+                    maximum=1.0,
+                    step=0.01,
+                    value=0.5,
+                    label="Guidance Interval",
+                    interactive=True,
+                    info="Guidance interval for the generation. 0.5 means only apply guidance in the middle steps (0.25 * infer_steps to 0.75 * infer_steps)",
+                )
+                guidance_interval_decay = gr.Slider(
+                    minimum=0.0,
+                    maximum=1.0,
+                    step=0.01,
+                    value=0.0,
+                    label="Guidance Interval Decay",
+                    interactive=True,
+                    info="Guidance interval decay for the generation. Guidance scale will decay from guidance_scale to min_guidance_scale in the interval. 0.0 means no decay.",
+                )
+                min_guidance_scale = gr.Slider(
+                    minimum=0.0,
+                    maximum=200.0,
+                    step=0.1,
+                    value=3.0,
+                    label="Min Guidance Scale",
+                    interactive=True,
+                    info="Min guidance scale for guidance interval decay's end scale",
+                )
+                oss_steps = gr.Textbox(
+                    label="OSS Steps",
+                    placeholder="16, 29, 52, 96, 129, 158, 172, 183, 189, 200",
+                    value=None,
+                    info="Optimal Steps for the generation. But not test well",
+                )
 
             text2music_bnt = gr.Button("Generate", variant="primary")
 
         with gr.Column():
             outputs, input_params_json = create_output_ui()
             with gr.Tab("retake"):
-                retake_variance = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, value=0.2, label="variance")
-                retake_seeds = gr.Textbox(label="retake seeds (default None)", placeholder="", value=None)
+                retake_variance = gr.Slider(
+                    minimum=0.0, maximum=1.0, step=0.01, value=0.2, label="variance"
+                )
+                retake_seeds = gr.Textbox(
+                    label="retake seeds (default None)", placeholder="", value=None
+                )
                 retake_bnt = gr.Button("Retake", variant="primary")
                 retake_outputs, retake_input_params_json = create_output_ui("Retake")
 
@@ -124,13 +251,21 @@ def create_text2music_ui(
                         json_data["use_erg_lyric"],
                         json_data["use_erg_diffusion"],
                         ", ".join(map(str, json_data["oss_steps"])),
-                        json_data["guidance_scale_text"] if "guidance_scale_text" in json_data else 0.0,
-                        json_data["guidance_scale_lyric"] if "guidance_scale_lyric" in json_data else 0.0,
+                        (
+                            json_data["guidance_scale_text"]
+                            if "guidance_scale_text" in json_data
+                            else 0.0
+                        ),
+                        (
+                            json_data["guidance_scale_lyric"]
+                            if "guidance_scale_lyric" in json_data
+                            else 0.0
+                        ),
                         retake_seeds=retake_seeds,
                         retake_variance=retake_variance,
                         task="retake",
                     )
-                
+
                 retake_bnt.click(
                     fn=retake_process_func,
                     inputs=[
@@ -141,15 +276,45 @@ def create_text2music_ui(
                     outputs=retake_outputs + [retake_input_params_json],
                 )
             with gr.Tab("repainting"):
-                retake_variance = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, value=0.2, label="variance")
-                retake_seeds = gr.Textbox(label="repaint seeds (default None)", placeholder="", value=None)
-                repaint_start = gr.Slider(minimum=0.0, maximum=240.0, step=0.01, value=0.0, label="Repaint Start Time", interactive=True)
-                repaint_end = gr.Slider(minimum=0.0, maximum=240.0, step=0.01, value=30.0, label="Repaint End Time", interactive=True)
-                repaint_source = gr.Radio(["text2music", "last_repaint", "upload"], value="text2music", label="Repaint Source", elem_id="repaint_source")
+                retake_variance = gr.Slider(
+                    minimum=0.0, maximum=1.0, step=0.01, value=0.2, label="variance"
+                )
+                retake_seeds = gr.Textbox(
+                    label="repaint seeds (default None)", placeholder="", value=None
+                )
+                repaint_start = gr.Slider(
+                    minimum=0.0,
+                    maximum=240.0,
+                    step=0.01,
+                    value=0.0,
+                    label="Repaint Start Time",
+                    interactive=True,
+                )
+                repaint_end = gr.Slider(
+                    minimum=0.0,
+                    maximum=240.0,
+                    step=0.01,
+                    value=30.0,
+                    label="Repaint End Time",
+                    interactive=True,
+                )
+                repaint_source = gr.Radio(
+                    ["text2music", "last_repaint", "upload"],
+                    value="text2music",
+                    label="Repaint Source",
+                    elem_id="repaint_source",
+                )
 
-                repaint_source_audio_upload = gr.Audio(label="Upload Audio", type="filepath", visible=False, elem_id="repaint_source_audio_upload")
+                repaint_source_audio_upload = gr.Audio(
+                    label="Upload Audio",
+                    type="filepath",
+                    visible=False,
+                    elem_id="repaint_source_audio_upload",
+                )
                 repaint_source.change(
-                    fn=lambda x: gr.update(visible=x == "upload", elem_id="repaint_source_audio_upload"),
+                    fn=lambda x: gr.update(
+                        visible=x == "upload", elem_id="repaint_source_audio_upload"
+                    ),
                     inputs=[repaint_source],
                     outputs=[repaint_source_audio_upload],
                 )
@@ -187,9 +352,7 @@ def create_text2music_ui(
                     if repaint_source == "upload":
                         src_audio_path = repaint_source_audio_upload
                         audio_duration = librosa.get_duration(filename=src_audio_path)
-                        json_data = {
-                            "audio_duration": audio_duration
-                        }
+                        json_data = {"audio_duration": audio_duration}
                     elif repaint_source == "text2music":
                         json_data = text2music_json_data
                         src_audio_path = json_data["audio_path"]
@@ -258,11 +421,33 @@ def create_text2music_ui(
             with gr.Tab("edit"):
                 edit_prompt = gr.Textbox(lines=2, label="Edit Tags", max_lines=4)
                 edit_lyrics = gr.Textbox(lines=9, label="Edit Lyrics", max_lines=13)
-                retake_seeds = gr.Textbox(label="edit seeds (default None)", placeholder="", value=None)
+                retake_seeds = gr.Textbox(
+                    label="edit seeds (default None)", placeholder="", value=None
+                )
 
-                edit_type = gr.Radio(["only_lyrics", "remix"], value="only_lyrics", label="Edit Type", elem_id="edit_type", info="`only_lyrics` will keep the whole song the same except lyrics difference. Make your diffrence smaller, e.g. one lyrc line change.\nremix can change the song melody and genre")
-                edit_n_min = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, value=0.6, label="edit_n_min", interactive=True)
-                edit_n_max = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, value=1.0, label="edit_n_max", interactive=True)
+                edit_type = gr.Radio(
+                    ["only_lyrics", "remix"],
+                    value="only_lyrics",
+                    label="Edit Type",
+                    elem_id="edit_type",
+                    info="`only_lyrics` will keep the whole song the same except lyrics difference. Make your diffrence smaller, e.g. one lyrc line change.\nremix can change the song melody and genre",
+                )
+                edit_n_min = gr.Slider(
+                    minimum=0.0,
+                    maximum=1.0,
+                    step=0.01,
+                    value=0.6,
+                    label="edit_n_min",
+                    interactive=True,
+                )
+                edit_n_max = gr.Slider(
+                    minimum=0.0,
+                    maximum=1.0,
+                    step=0.01,
+                    value=1.0,
+                    label="edit_n_max",
+                    interactive=True,
+                )
 
                 def edit_type_change_func(edit_type):
                     if edit_type == "only_lyrics":
@@ -276,13 +461,25 @@ def create_text2music_ui(
                 edit_type.change(
                     edit_type_change_func,
                     inputs=[edit_type],
-                    outputs=[edit_n_min, edit_n_max]
+                    outputs=[edit_n_min, edit_n_max],
                 )
 
-                edit_source = gr.Radio(["text2music", "last_edit", "upload"], value="text2music", label="Edit Source", elem_id="edit_source")
-                edit_source_audio_upload = gr.Audio(label="Upload Audio", type="filepath", visible=False, elem_id="edit_source_audio_upload")
+                edit_source = gr.Radio(
+                    ["text2music", "last_edit", "upload"],
+                    value="text2music",
+                    label="Edit Source",
+                    elem_id="edit_source",
+                )
+                edit_source_audio_upload = gr.Audio(
+                    label="Upload Audio",
+                    type="filepath",
+                    visible=False,
+                    elem_id="edit_source_audio_upload",
+                )
                 edit_source.change(
-                    fn=lambda x: gr.update(visible=x == "upload", elem_id="edit_source_audio_upload"),
+                    fn=lambda x: gr.update(
+                        visible=x == "upload", elem_id="edit_source_audio_upload"
+                    ),
                     inputs=[edit_source],
                     outputs=[edit_source_audio_upload],
                 )
@@ -321,9 +518,7 @@ def create_text2music_ui(
                     if edit_source == "upload":
                         src_audio_path = edit_source_audio_upload
                         audio_duration = librosa.get_duration(filename=src_audio_path)
-                        json_data = {
-                            "audio_duration": audio_duration
-                        }
+                        json_data = {"audio_duration": audio_duration}
                     elif edit_source == "text2music":
                         json_data = text2music_json_data
                         src_audio_path = json_data["audio_path"]
@@ -397,14 +592,42 @@ def create_text2music_ui(
                     outputs=edit_outputs + [edit_input_params_json],
                 )
             with gr.Tab("extend"):
-                extend_seeds = gr.Textbox(label="extend seeds (default None)", placeholder="", value=None)
-                left_extend_length = gr.Slider(minimum=0.0, maximum=240.0, step=0.01, value=0.0, label="Left Extend Length", interactive=True)
-                right_extend_length = gr.Slider(minimum=0.0, maximum=240.0, step=0.01, value=30.0, label="Right Extend Length", interactive=True)
-                extend_source = gr.Radio(["text2music", "last_extend", "upload"], value="text2music", label="Extend Source", elem_id="extend_source")
+                extend_seeds = gr.Textbox(
+                    label="extend seeds (default None)", placeholder="", value=None
+                )
+                left_extend_length = gr.Slider(
+                    minimum=0.0,
+                    maximum=240.0,
+                    step=0.01,
+                    value=0.0,
+                    label="Left Extend Length",
+                    interactive=True,
+                )
+                right_extend_length = gr.Slider(
+                    minimum=0.0,
+                    maximum=240.0,
+                    step=0.01,
+                    value=30.0,
+                    label="Right Extend Length",
+                    interactive=True,
+                )
+                extend_source = gr.Radio(
+                    ["text2music", "last_extend", "upload"],
+                    value="text2music",
+                    label="Extend Source",
+                    elem_id="extend_source",
+                )
 
-                extend_source_audio_upload = gr.Audio(label="Upload Audio", type="filepath", visible=False, elem_id="extend_source_audio_upload")
+                extend_source_audio_upload = gr.Audio(
+                    label="Upload Audio",
+                    type="filepath",
+                    visible=False,
+                    elem_id="extend_source_audio_upload",
+                )
                 extend_source.change(
-                    fn=lambda x: gr.update(visible=x == "upload", elem_id="extend_source_audio_upload"),
+                    fn=lambda x: gr.update(
+                        visible=x == "upload", elem_id="extend_source_audio_upload"
+                    ),
                     inputs=[extend_source],
                     outputs=[extend_source_audio_upload],
                 )
@@ -442,9 +665,7 @@ def create_text2music_ui(
                         src_audio_path = extend_source_audio_upload
                         # get audio duration
                         audio_duration = librosa.get_duration(filename=src_audio_path)
-                        json_data = {
-                            "audio_duration": audio_duration
-                        }
+                        json_data = {"audio_duration": audio_duration}
                     elif extend_source == "text2music":
                         json_data = text2music_json_data
                         src_audio_path = json_data["audio_path"]
@@ -531,8 +752,16 @@ def create_text2music_ui(
                 json_data["use_erg_lyric"],
                 json_data["use_erg_diffusion"],
                 ", ".join(map(str, json_data["oss_steps"])),
-                json_data["guidance_scale_text"] if "guidance_scale_text" in json_data else 0.0,
-                json_data["guidance_scale_lyric"] if "guidance_scale_lyric" in json_data else 0.0,
+                (
+                    json_data["guidance_scale_text"]
+                    if "guidance_scale_text" in json_data
+                    else 0.0
+                ),
+                (
+                    json_data["guidance_scale_lyric"]
+                    if "guidance_scale_lyric" in json_data
+                    else 0.0
+                ),
             )
 
         sample_bnt.click(
@@ -580,7 +809,8 @@ def create_text2music_ui(
             oss_steps,
             guidance_scale_text,
             guidance_scale_lyric,
-        ], outputs=outputs + [input_params_json]
+        ],
+        outputs=outputs + [input_params_json],
     )
 
 
@@ -594,7 +824,8 @@ def create_main_demo_ui(
         gr.Markdown(
             """
             <h1 style="text-align: center;">ACE-Step: A Step Towards Music Generation Foundation Model</h1>
-        """)
+        """
+        )
 
         with gr.Tab("text2music"):
             create_text2music_ui(

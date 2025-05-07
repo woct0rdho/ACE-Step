@@ -176,6 +176,7 @@ cython_debug/
 !requirements.txt
 *.log
 *.flac
+*.wav
 minio_config.yaml
 .history/*
 __pycache__/*
@@ -200,3 +201,4 @@ app_demo.py
 ui/components_demo.py
 data_sampler_demo.py
 pipeline_ace_step_demo.py
+*.wav

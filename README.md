@@ -1,22 +1,21 @@
-<h1 align="center">ACE-Step</h1>
-<h1 align="center">A Step Towards Music Generation Foundation Model</h1>
-<p align="center">
-    <a href="https://ace-step.github.io/">Project</a> |
-    <a href="https://huggingface.co/ACE-Step/ACE-Step-v1-3.5B">Hugging Face</a> |
-    <a href="https://modelscope.cn/models/ACE-Step/ACE-Step-v1-3.5B">ModelScope</a> |
-    <a href="https://huggingface.co/spaces/ACE-Step/ACE-Step">Space Demo</a> |
-     <a href="https://discord.gg/rjAZz2xBdG">Discord</a> 
-</p>
+# ACE-Step
+
+A Step Towards Music Generation Foundation Model
+
+[Project Page](https://ace-step.github.io/) |
+[Checkpoints](https://huggingface.co/ACE-Step/ACE-Step-v1-3.5B) |
+[Space Demo](https://huggingface.co/spaces/ACE-Step/ACE-Step) |
+[Discord](https://discord.gg/rjAZz2xBdG) 
 
 ---
 <p align="center">
-    <img src="./fig/orgnization_logos.png" width="100%" alt="StepFun Logo">
+    <img src="./assets/orgnization_logos.png" width="100%" alt="StepFun Logo">
 </p>
 
 ## Table of Contents
 
-- [Features](#-features)
 - [Installation](#-installation)
+- [Features](#-features)
 - [Usage](#-usage)
 - [Train](#-train)
 
@@ -24,20 +23,42 @@
 
 - 🚀 2025.05.06: Open source demo code and model
 
-## TODOs📋
+## 📋 Roadmap
+
 - [x] Release training code 🔥
 - [x] Release LoRA training code 🔥
-- [ ] Release RapMachine lora 🎤
+- [ ] Release RapMachine LoRA 🎤
 - [ ] Release ControlNet training code 🔥
-- [ ] Release Singing2Accompaniment controlnet 🎮
-- [ ] Release evaluation performance and technical report  📄
+- [ ] Release Singing2Accompaniment ControlNet 🎮
+- [ ] Release evaluation performance and technical report 📄
+
+## 📦 Installation
+
+### Quick Start
+
+```bash
+pip install git+https://github.com/ace-step/ACE-Step
+```
+
+On Windows, you may need to run the following before running the command above:
+
+```bash
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+```
+
+Then, launch the GUI:
+
+```bash
+acestep # Launch the GUI
+```
+
+The GUI works on Windows, macOS, and Linux.
 
 ## 🏗️ Architecture
 
 <p align="center">
-    <img src="./fig/ACE-Step_framework.png" width="100%" alt="ACE-Step Framework">
+    <img src="./assets/ACE-Step_framework.png" width="100%" alt="ACE-Step Framework">
 </p>
-
 
 ## 📝 Abstract
 
@@ -50,42 +71,49 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 ## ✨ Features
 
 <p align="center">
-    <img src="./fig/application_map.png" width="100%" alt="ACE-Step Framework">
+    <img src="./assets/application_map.png" width="100%" alt="ACE-Step Framework">
 </p>
 
 ### 🎯 Baseline Quality
 
 #### 🌈 Diverse Styles & Genres
+
 - 🎸 Supports all mainstream music styles with various description formats including short tags, descriptive text, or use-case scenarios
 - 🎷 Capable of generating music across different genres with appropriate instrumentation and style
 
 #### 🌍 Multiple Languages
+
 - 🗣️ Supports 19 languages with top 10 well-performing languages including:
   - 🇺🇸 English, 🇨🇳 Chinese, 🇷🇺 Russian, 🇪🇸 Spanish, 🇯🇵 Japanese, 🇩🇪 German, 🇫🇷 French, 🇵🇹 Portuguese, 🇮🇹 Italian, 🇰🇷 Korean
 - ⚠️ Due to data imbalance, less common languages may underperform
 
 #### 🎻 Instrumental Styles
+
 - 🎹 Supports various instrumental music generation across different genres and styles
 - 🎺 Capable of producing realistic instrumental tracks with appropriate timbre and expression for each instrument
 - 🎼 Can generate complex arrangements with multiple instruments while maintaining musical coherence
 
 #### 🎤 Vocal Techniques
+
 - 🎙️ Capable of rendering various vocal styles and techniques with good quality
 - 🗣️ Supports different vocal expressions including various singing techniques and styles
 
 ### 🎛️ Controllability
 
 #### 🔄 Variations Generation
+
 - ⚙️ Implemented using training-free, inference-time optimization techniques
 - 🌊 Flow-matching model generates initial noise, then uses trigFlow's noise formula to add additional Gaussian noise
 - 🎚️ Adjustable mixing ratio between original initial noise and new Gaussian noise to control variation degree
 
 #### 🎨 Repainting
+
 - 🖌️ Implemented by adding noise to the target audio input and applying mask constraints during the ODE process
 - 🔍 When input conditions change from the original generation, only specific aspects can be modified while preserving the rest
 - 🔀 Can be combined with Variations Generation techniques to create localized variations in style, lyrics, or vocals
 
 #### ✏️ Lyric Editing
+
 - 💡 Innovatively applies flow-edit technology to enable localized lyric modifications while preserving melody, vocals, and accompaniment
 - 🔄 Works with both generated content and uploaded audio, greatly enhancing creative possibilities
 - ℹ️ Current limitation: can only modify small segments of lyrics at once to avoid distortion, but multiple edits can be applied sequentially
@@ -93,11 +121,13 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 ### 🚀 Applications
 
 #### 🎤 Lyric2Vocal (LoRA)
+
 - 🔊 Based on a LoRA fine-tuned on pure vocal data, allowing direct generation of vocal samples from lyrics
 - 🛠️ Offers numerous practical applications such as vocal demos, guide tracks, songwriting assistance, and vocal arrangement experimentation
 - ⏱️ Provides a quick way to test how lyrics might sound when sung, helping songwriters iterate faster
 
 #### 📝 Text2Samples (LoRA)
+
 - 🎛️ Similar to Lyric2Vocal, but fine-tuned on pure instrumental and sample data
 - 🎵 Capable of generating conceptual music production samples from text descriptions
 - 🧰 Useful for quickly creating instrument loops, sound effects, and musical elements for production
@@ -105,16 +135,19 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 ### 🔮 Coming Soon
 
 #### 🎤 RapMachine
+
 - 🔥 Fine-tuned on pure rap data to create an AI system specialized in rap generation
 - 🏆 Expected capabilities include AI rap battles and narrative expression through rap
 - 📚 Rap has exceptional storytelling and expressive capabilities, offering extraordinary application potential
 
 #### 🎛️ StemGen
+
 - 🎚️ A controlnet-lora trained on multi-track data to generate individual instrument stems
 - 🎯 Takes a reference track and specified instrument (or instrument reference audio) as input
 - 🎹 Outputs an instrument stem that complements the reference track, such as creating a piano accompaniment for a flute melody or adding jazz drums to a lead guitar
 
 #### 🎤 Singing2Accompaniment
+
 - 🔄 The reverse process of StemGen, generating a mixed master track from a single vocal track
 - 🎵 Takes a vocal track and specified style as input to produce a complete vocal accompaniment
 - 🎸 Creates full instrumental backing that complements the input vocals, making it easy to add professional-sounding accompaniment to any vocal recording
@@ -134,89 +167,40 @@ We have evaluated ACE-Step across different hardware setups, yielding the follow
 
 We use RTF (Real-Time Factor) to measure the performance of ACE-Step. Higher values indicate faster generation speed. 27.27x means to generate 1 minute of music, it takes 2.2 seconds (60/27.27). The performance is measured on a single GPU with batch size 1 and 27 steps.
 
-
-## 💻 Installation
-
-### Prerequisites
-
-* Make sure you have Python installed. You can download it from [python.org](https://www.python.org/).
-* You will also need either `Conda` (recommended) or `venv`.
-
-### Environment Setup
-
-It is highly recommended to use a virtual environment to manage project dependencies and avoid conflicts. Choose **one** of the following methods (Conda or venv):
-
-#### Option 1: Using Conda
-
-1.  **Create the environment** named `ace_step` with Python 3.10:
-    ```bash
-    conda create -n ace_step python=3.10 -y
-    ```
-
-2.  **Activate the environment:**
-    ```bash
-    conda activate ace_step
-    ```
-
-#### Option 2: Using venv
-
-1.  **Ensure you are using the correct Python version.**
-
-2.  **Create the virtual environment** (commonly named `venv`):
-    ```bash
-    python -m venv venv 
-    ```
-
-3.  **Activate the environment:**
-    * **On Windows (cmd.exe):**
-        ```bash
-        venv\Scripts\activate.bat
-        ```
-    * **On Windows (PowerShell):**
-        ```powershell
-        .\venv\Scripts\Activate.ps1 
-        ```
-        *(If you encounter execution policy errors, you might need to run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process` first)*
-    * **On Linux / macOS (bash/zsh):**
-        ```bash
-        source venv/bin/activate
-        ```
-
-3.  **Install dependencies** from the `requirements.txt` file:
-
-    for macOS/Linux users:
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-    for Windows users:
-    ```bash
-    # Install PyTorch, TorchAudio, and TorchVision for Windows
-    # replace cu126 with your CUDA version
-    # replace torchvision and torchaudio with your version
-    pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
-
-    # then install other dependencies
-    pip install -r requirements.txt
-    ```
-
 ## 🚀 Usage
 
-![Demo Interface](fig/demo_interface.png)
+![Demo Interface](assets/demo_interface.png)
 
 ### 🔍 Basic Usage
 
 ```bash
-python app.py
+acestep
 ```
 
 ### ⚙️ Advanced Usage
 
 ```bash
-python app.py --checkpoint_path /path/to/checkpoint --port 7865 --device_id 0 --share true --bf16 true
+acestep --checkpoint_path /path/to/checkpoint --port 7865 --device_id 0 --share true --bf16 true
 ```
 
-If you are using MacOS, please use `--bf16 false` to avoid errors.
+If you are using macOS, please use `--bf16 false` to avoid errors.
+
+#### 🔍 API Usage
+
+```python
+from acestep.api import ACEStep
+
+model = ACEStep()
+
+audio_out = model.infer(
+    prompt="upbeat pop, catchy melody, female singer",
+    lyrics="[verse]\nSun is shining bright today\nFeeling happy, come what may",
+    audio_duration=5.0, # 5 seconds
+    infer_step=20        # Fewer steps for speed
+)
+
+audio_out.save_wav("output.wav")
+```
 
 #### 🛠️ Command Line Arguments
 
@@ -268,11 +252,11 @@ The ACE-Step interface provides several tabs for different music generation and 
 - 📐 Specify left and right extension lengths
 - 🔍 Choose the source audio to extend
 
-## Examples
+## 📂 Examples
 
 The `examples/input_params` directory contains sample input parameters that can be used as references for generating music.
 
-## Train
+## 🔨 Train
 
 ### Prerequisites
 1. Prepare the environment as described in the installation section.
@@ -293,17 +277,17 @@ The `examples/input_params` directory contains sample input parameters that can 
 Example dataset entry:
 ```json
 {
-  "keys": "1ce52937-cd1d-456f-967d-0f1072fcbb58",
-  "tags": ["pop", "acoustic", "ballad", "romantic", "emotional"],
-  "speaker_emb_path": "",
-  "norm_lyrics": "I love you, I love you, I love you",
-  "recaption": {
-    "simplified": "pop",
-    "expanded": "pop, acoustic, ballad, romantic, emotional",
-    "descriptive": "The sound is soft and gentle, like a tender breeze on a quiet evening. It's soothing and full of longing.",
-    "use_cases": "Suitable for background music in romantic films or during intimate moments.",
-    "analysis": "pop, ballad, piano, guitar, slow tempo, romantic, emotional"
-  }
+	"keys": "1ce52937-cd1d-456f-967d-0f1072fcbb58",
+	"tags": ["pop", "acoustic", "ballad", "romantic", "emotional"],
+	"speaker_emb_path": "",
+	"norm_lyrics": "I love you, I love you, I love you",
+	"recaption": {
+		"simplified": "pop",
+		"expanded": "pop, acoustic, ballad, romantic, emotional",
+		"descriptive": "The sound is soft and gentle, like a tender breeze on a quiet evening. It's soothing and full of longing.",
+		"use_cases": "Suitable for background music in romantic films or during intimate moments.",
+		"analysis": "pop, ballad, piano, guitar, slow tempo, romantic, emotional"
+	}
 }
 ```
 
@@ -339,18 +323,18 @@ python trainer.py --dataset_path "path/to/your/dataset" --checkpoint_dir "path/t
 Example LoRA configuration file (lora_config.json):
 ```json
 {
-  "r": 16,
-  "lora_alpha": 32,
-  "target_modules": [
-    "speaker_embedder",
-    "linear_q",
-    "linear_k",
-    "linear_v",
-    "to_q",
-    "to_k",
-    "to_v",
-    "to_out.0"
-  ]
+	"r": 16,
+	"lora_alpha": 32,
+	"target_modules": [
+		"speaker_embedder",
+		"linear_q",
+		"linear_k",
+		"linear_v",
+		"to_q",
+		"to_k",
+		"to_v",
+		"to_out.0"
+	]
 }
 ```
 
@@ -361,7 +345,7 @@ Example LoRA configuration file (lora_config.json):
 - `--reload_dataloaders_every_n_epochs`: Frequency to reload dataloaders (default: 1)
 - `--val_check_interval`: Validation check interval (default: None)
 
-## 📜 License&Disclaimer
+## 📜 License & Disclaimer
 
 This project is licensed under [Apache License 2.0](./LICENSE)
 
@@ -378,10 +362,10 @@ If you find this project useful for your research, please consider citing:
 
 ```BibTeX
 @misc{gong2025acestep,
-  title={ACE-Step: A Step Towards Music Generation Foundation Model},
-  author={Junmin Gong, Wenxiao Zhao, Sen Wang, Shengyuan Xu, Jing Guo}, 
-  howpublished={\url{https://github.com/ace-step/ACE-Step}},
-  year={2025},
-  note={GitHub repository}
+	title={ACE-Step: A Step Towards Music Generation Foundation Model},
+	author={Junmin Gong, Wenxiao Zhao, Sen Wang, Shengyuan Xu, Jing Guo}, 
+	howpublished={\url{https://github.com/ace-step/ACE-Step}},
+	year={2025},
+	note={GitHub repository}
 }
 ```

@@ -23,10 +23,18 @@ from diffusers.models.normalization import RMSNorm
 
 try:
     # from .dcformer import DCMHAttention
-    from .customer_attention_processor import Attention, CustomLiteLAProcessor2_0, CustomerAttnProcessor2_0
+    from .customer_attention_processor import (
+        Attention,
+        CustomLiteLAProcessor2_0,
+        CustomerAttnProcessor2_0,
+    )
 except ImportError:
     # from dcformer import DCMHAttention
-    from customer_attention_processor import Attention, CustomLiteLAProcessor2_0, CustomerAttnProcessor2_0
+    from customer_attention_processor import (
+        Attention,
+        CustomLiteLAProcessor2_0,
+        CustomerAttnProcessor2_0,
+    )
 
 
 logger = logging.get_logger(__name__)
@@ -55,12 +63,15 @@ def t2i_modulate(x, shift, scale):
     return x * (1 + scale) + shift
 
 
-def get_same_padding(kernel_size: Union[int, Tuple[int, ...]]) -> Union[int, Tuple[int, ...]]:
+def get_same_padding(
+    kernel_size: Union[int, Tuple[int, ...]],
+) -> Union[int, Tuple[int, ...]]:
     if isinstance(kernel_size, tuple):
         return tuple([get_same_padding(ks) for ks in kernel_size])
     else:
         assert kernel_size % 2 > 0, f"kernel size {kernel_size} should be odd number"
         return kernel_size // 2
+
 
 class ConvLayer(nn.Module):
     def __init__(
@@ -187,6 +198,7 @@ class LinearTransformerBlock(nn.Module):
     """
     A Sana block with global shared adaptive layer norm (adaLN-single) conditioning.
     """
+
     def __init__(
         self,
         dim,

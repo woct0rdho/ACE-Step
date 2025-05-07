@@ -1,7 +1,7 @@
 # Authors:
 #   2019.5 Zhiyang Zhou (https://github.com/Joee1995/chn_text_norm.git)
 #   2019.9 - 2022 Jiayu DU
-#copy from https://github.com/coqui-ai/TTS/blob/dbf1a08a0d4e47fdad6172e433eeb34bc6b13b4e/TTS/tts/layers/xtts/zh_num2words.py
+# copy from https://github.com/coqui-ai/TTS/blob/dbf1a08a0d4e47fdad6172e433eeb34bc6b13b4e/TTS/tts/layers/xtts/zh_num2words.py
 import argparse
 import csv
 import os

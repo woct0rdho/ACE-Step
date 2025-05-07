@@ -10,23 +10,27 @@ import torch.nn.functional as F
 import torch.utils.data
 from pytorch_lightning.core import LightningModule
 from torch.utils.data import DataLoader
-from schedulers.scheduling_flow_match_euler_discrete import FlowMatchEulerDiscreteScheduler
-from text2music_dataset import Text2MusicDataset
+from acestep.schedulers.scheduling_flow_match_euler_discrete import (
+    FlowMatchEulerDiscreteScheduler,
+)
+from acestep.text2music_dataset import Text2MusicDataset
 from loguru import logger
 from transformers import AutoModel, Wav2Vec2FeatureExtractor
 import torchaudio
-from diffusers.pipelines.stable_diffusion_3.pipeline_stable_diffusion_3 import retrieve_timesteps
+from diffusers.pipelines.stable_diffusion_3.pipeline_stable_diffusion_3 import (
+    retrieve_timesteps,
+)
 from diffusers.utils.torch_utils import randn_tensor
-from apg_guidance import apg_forward, MomentumBuffer
+from acestep.apg_guidance import apg_forward, MomentumBuffer
 from tqdm import tqdm
 import random
 import os
-from pipeline_ace_step import ACEStepPipeline
+from acestep.pipeline_ace_step import ACEStepPipeline
 
 
 matplotlib.use("Agg")
 torch.backends.cudnn.benchmark = False
-torch.set_float32_matmul_precision('high')
+torch.set_float32_matmul_precision("high")
 
 
 class Pipeline(LightningModule):
@@ -47,17 +51,17 @@ class Pipeline(LightningModule):
         max_steps: int = 200000,
         warmup_steps: int = 4000,
         dataset_path: str = "./data/your_dataset_path",
-        lora_config_path: str = None
+        lora_config_path: str = None,
     ):
         super().__init__()
 
         self.save_hyperparameters()
         self.is_train = train
         self.T = T
-        
+
         # Initialize scheduler
         self.scheduler = self.get_scheduler()
-        
+
         # Initialize local_rank for distributed training
         self.local_rank = 0
         if torch.distributed.is_initialized():
@@ -91,15 +95,31 @@ class Pipeline(LightningModule):
         if self.is_train:
             self.transformers.train()
 
-            self.mert_model = AutoModel.from_pretrained("m-a-p/MERT-v1-330M", trust_remote_code=True, cache_dir=checkpoint_dir).eval()
+            self.mert_model = AutoModel.from_pretrained(
+                "m-a-p/MERT-v1-330M", trust_remote_code=True, cache_dir=checkpoint_dir
+            ).eval()
             self.mert_model.requires_grad_(False)
-            self.resampler_mert = torchaudio.transforms.Resample(orig_freq=48000, new_freq=24000)
-            self.processor_mert = Wav2Vec2FeatureExtractor.from_pretrained("m-a-p/MERT-v1-330M", trust_remote_code=True)
+            self.resampler_mert = torchaudio.transforms.Resample(
+                orig_freq=48000, new_freq=24000
+            )
+            self.processor_mert = Wav2Vec2FeatureExtractor.from_pretrained(
+                "m-a-p/MERT-v1-330M", trust_remote_code=True
+            )
 
-            self.hubert_model = AutoModel.from_pretrained("utter-project/mHuBERT-147", local_files_only=True, cache_dir=checkpoint_dir).eval()
+            self.hubert_model = AutoModel.from_pretrained(
+                "utter-project/mHuBERT-147",
+                local_files_only=True,
+                cache_dir=checkpoint_dir,
+            ).eval()
             self.hubert_model.requires_grad_(False)
-            self.resampler_mhubert = torchaudio.transforms.Resample(orig_freq=48000, new_freq=16000)
-            self.processor_mhubert = Wav2Vec2FeatureExtractor.from_pretrained("utter-project/mHuBERT-147", local_files_only=True, cache_dir=checkpoint_dir)
+            self.resampler_mhubert = torchaudio.transforms.Resample(
+                orig_freq=48000, new_freq=16000
+            )
+            self.processor_mhubert = Wav2Vec2FeatureExtractor.from_pretrained(
+                "utter-project/mHuBERT-147",
+                local_files_only=True,
+                cache_dir=checkpoint_dir,
+            )
 
             self.ssl_coeff = ssl_coeff
 
@@ -110,10 +130,22 @@ class Pipeline(LightningModule):
         actual_lengths_24k = wav_lengths // 2  # 48kHz -> 24kHz
 
         # Normalize the actual audio part
-        means = torch.stack([mert_input_wavs_mono_24k[i, :actual_lengths_24k[i]].mean() for i in range(bsz)])
-        vars = torch.stack([mert_input_wavs_mono_24k[i, :actual_lengths_24k[i]].var() for i in range(bsz)])
-        mert_input_wavs_mono_24k = (mert_input_wavs_mono_24k - means.view(-1, 1)) / torch.sqrt(vars.view(-1, 1) + 1e-7)
-        
+        means = torch.stack(
+            [
+                mert_input_wavs_mono_24k[i, : actual_lengths_24k[i]].mean()
+                for i in range(bsz)
+            ]
+        )
+        vars = torch.stack(
+            [
+                mert_input_wavs_mono_24k[i, : actual_lengths_24k[i]].var()
+                for i in range(bsz)
+            ]
+        )
+        mert_input_wavs_mono_24k = (
+            mert_input_wavs_mono_24k - means.view(-1, 1)
+        ) / torch.sqrt(vars.view(-1, 1) + 1e-7)
+
         # MERT SSL constraint
         # Define the length of each chunk (5 seconds of samples)
         chunk_size = 24000 * 5  # 5 seconds, 24000 samples per second
@@ -131,7 +163,9 @@ class Pipeline(LightningModule):
                 end = min(start + chunk_size, actual_length)
                 chunk = audio[start:end]
                 if len(chunk) < chunk_size:
-                    chunk = F.pad(chunk, (0, chunk_size - len(chunk)))  # Pad insufficient parts with zeros
+                    chunk = F.pad(
+                        chunk, (0, chunk_size - len(chunk))
+                    )  # Pad insufficient parts with zeros
                 all_chunks.append(chunk)
                 chunk_actual_lengths.append(end - start)
 
@@ -147,14 +181,21 @@ class Pipeline(LightningModule):
         chunk_num_features = [(length + 319) // 320 for length in chunk_actual_lengths]
 
         # Trim the hidden states of each chunk
-        chunk_hidden_states = [mert_ssl_hidden_states[i, :chunk_num_features[i], :] for i in range(len(all_chunks))]
+        chunk_hidden_states = [
+            mert_ssl_hidden_states[i, : chunk_num_features[i], :]
+            for i in range(len(all_chunks))
+        ]
 
         # Organize hidden states by audio
         mert_ssl_hidden_states_list = []
         chunk_idx = 0
         for i in range(bsz):
-            audio_chunks = chunk_hidden_states[chunk_idx:chunk_idx + num_chunks_per_audio[i]]
-            audio_hidden = torch.cat(audio_chunks, dim=0)  # Concatenate chunks of the same audio
+            audio_chunks = chunk_hidden_states[
+                chunk_idx : chunk_idx + num_chunks_per_audio[i]
+            ]
+            audio_hidden = torch.cat(
+                audio_chunks, dim=0
+            )  # Concatenate chunks of the same audio
             mert_ssl_hidden_states_list.append(audio_hidden)
             chunk_idx += num_chunks_per_audio[i]
 
@@ -168,18 +209,29 @@ class Pipeline(LightningModule):
         actual_lengths_16k = wav_lengths // 3  # Convert lengths from 48kHz to 16kHz
 
         # Step 2: Zero-mean unit-variance normalization (only on actual audio)
-        means = torch.stack([mhubert_input_wavs_mono_16k[i, :actual_lengths_16k[i]].mean() 
-                            for i in range(bsz)])
-        vars = torch.stack([mhubert_input_wavs_mono_16k[i, :actual_lengths_16k[i]].var() 
-                            for i in range(bsz)])
-        mhubert_input_wavs_mono_16k = (mhubert_input_wavs_mono_16k - means.view(-1, 1)) / \
-                                    torch.sqrt(vars.view(-1, 1) + 1e-7)
-    
+        means = torch.stack(
+            [
+                mhubert_input_wavs_mono_16k[i, : actual_lengths_16k[i]].mean()
+                for i in range(bsz)
+            ]
+        )
+        vars = torch.stack(
+            [
+                mhubert_input_wavs_mono_16k[i, : actual_lengths_16k[i]].var()
+                for i in range(bsz)
+            ]
+        )
+        mhubert_input_wavs_mono_16k = (
+            mhubert_input_wavs_mono_16k - means.view(-1, 1)
+        ) / torch.sqrt(vars.view(-1, 1) + 1e-7)
+
         # Step 3: Define chunk size for MHubert (30 seconds at 16kHz)
         chunk_size = 16000 * 30  # 30 seconds = 480,000 samples
 
         # Step 4: Split audio into chunks
-        num_chunks_per_audio = (actual_lengths_16k + chunk_size - 1) // chunk_size  # Ceiling division
+        num_chunks_per_audio = (
+            actual_lengths_16k + chunk_size - 1
+        ) // chunk_size  # Ceiling division
         all_chunks = []
         chunk_actual_lengths = []
 
@@ -193,7 +245,7 @@ class Pipeline(LightningModule):
                     chunk = F.pad(chunk, (0, chunk_size - len(chunk)))  # Pad with zeros
                 all_chunks.append(chunk)
                 chunk_actual_lengths.append(end - start)
-        
+
         # Step 5: Stack all chunks for batch inference
         all_chunks = torch.stack(all_chunks, dim=0)  # Shape: (total_chunks, chunk_size)
 
@@ -206,20 +258,33 @@ class Pipeline(LightningModule):
         chunk_num_features = [(length + 319) // 320 for length in chunk_actual_lengths]
 
         # Step 8: Trim hidden states to remove padding effects
-        chunk_hidden_states = [mhubert_ssl_hidden_states[i, :chunk_num_features[i], :] for i in range(len(all_chunks))]
+        chunk_hidden_states = [
+            mhubert_ssl_hidden_states[i, : chunk_num_features[i], :]
+            for i in range(len(all_chunks))
+        ]
 
         # Step 9: Reorganize hidden states by original audio
         mhubert_ssl_hidden_states_list = []
         chunk_idx = 0
         for i in range(bsz):
-            audio_chunks = chunk_hidden_states[chunk_idx:chunk_idx + num_chunks_per_audio[i]]
-            audio_hidden = torch.cat(audio_chunks, dim=0)  # Concatenate chunks for this audio
+            audio_chunks = chunk_hidden_states[
+                chunk_idx : chunk_idx + num_chunks_per_audio[i]
+            ]
+            audio_hidden = torch.cat(
+                audio_chunks, dim=0
+            )  # Concatenate chunks for this audio
             mhubert_ssl_hidden_states_list.append(audio_hidden)
             chunk_idx += num_chunks_per_audio[i]
         return mhubert_ssl_hidden_states_list
 
     def get_text_embeddings(self, texts, device, text_max_length=256):
-        inputs = self.text_tokenizer(texts, return_tensors="pt", padding=True, truncation=True, max_length=text_max_length)
+        inputs = self.text_tokenizer(
+            texts,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=text_max_length,
+        )
         inputs = {key: value.to(device) for key, value in inputs.items()}
         if self.text_encoder_model.device != device:
             self.text_encoder_model.to(device)
@@ -228,7 +293,7 @@ class Pipeline(LightningModule):
             last_hidden_states = outputs.last_hidden_state
         attention_mask = inputs["attention_mask"]
         return last_hidden_states, attention_mask
-    
+
     def preprocess(self, batch, train=True):
         target_wavs = batch["target_wavs"]
         wav_lengths = batch["wav_lengths"]
@@ -243,47 +308,69 @@ class Pipeline(LightningModule):
         if train:
             with torch.amp.autocast(device_type="cuda", dtype=dtype):
                 mert_ssl_hidden_states = self.infer_mert_ssl(target_wavs, wav_lengths)
-                mhubert_ssl_hidden_states = self.infer_mhubert_ssl(target_wavs, wav_lengths)
+                mhubert_ssl_hidden_states = self.infer_mhubert_ssl(
+                    target_wavs, wav_lengths
+                )
 
         # 1: text embedding
         texts = batch["prompts"]
-        encoder_text_hidden_states, text_attention_mask = self.get_text_embeddings(texts, device)
+        encoder_text_hidden_states, text_attention_mask = self.get_text_embeddings(
+            texts, device
+        )
         encoder_text_hidden_states = encoder_text_hidden_states.to(dtype)
 
         target_latents, _ = self.dcae.encode(target_wavs, wav_lengths)
-        attention_mask = torch.ones(bs, target_latents.shape[-1], device=device, dtype=dtype)
+        attention_mask = torch.ones(
+            bs, target_latents.shape[-1], device=device, dtype=dtype
+        )
 
         speaker_embds = batch["speaker_embs"].to(dtype)
         keys = batch["keys"]
         lyric_token_ids = batch["lyric_token_ids"]
         lyric_mask = batch["lyric_masks"]
-        
+
         # cfg
         if train:
             full_cfg_condition_mask = torch.where(
                 (torch.rand(size=(bs,), device=device) < 0.15),
                 torch.zeros(size=(bs,), device=device),
-                torch.ones(size=(bs,), device=device)
+                torch.ones(size=(bs,), device=device),
             ).long()
             # N x T x 768
-            encoder_text_hidden_states = torch.where(full_cfg_condition_mask.unsqueeze(1).unsqueeze(1).bool(), encoder_text_hidden_states, torch.zeros_like(encoder_text_hidden_states))
-            
+            encoder_text_hidden_states = torch.where(
+                full_cfg_condition_mask.unsqueeze(1).unsqueeze(1).bool(),
+                encoder_text_hidden_states,
+                torch.zeros_like(encoder_text_hidden_states),
+            )
+
             full_cfg_condition_mask = torch.where(
                 (torch.rand(size=(bs,), device=device) < 0.50),
                 torch.zeros(size=(bs,), device=device),
-                torch.ones(size=(bs,), device=device)
+                torch.ones(size=(bs,), device=device),
             ).long()
             # N x 512
-            speaker_embds = torch.where(full_cfg_condition_mask.unsqueeze(1).bool(), speaker_embds, torch.zeros_like(speaker_embds))
+            speaker_embds = torch.where(
+                full_cfg_condition_mask.unsqueeze(1).bool(),
+                speaker_embds,
+                torch.zeros_like(speaker_embds),
+            )
 
             # Lyrics
             full_cfg_condition_mask = torch.where(
                 (torch.rand(size=(bs,), device=device) < 0.15),
                 torch.zeros(size=(bs,), device=device),
-                torch.ones(size=(bs,), device=device)
+                torch.ones(size=(bs,), device=device),
             ).long()
-            lyric_token_ids = torch.where(full_cfg_condition_mask.unsqueeze(1).bool(), lyric_token_ids, torch.zeros_like(lyric_token_ids))
-            lyric_mask = torch.where(full_cfg_condition_mask.unsqueeze(1).bool(), lyric_mask, torch.zeros_like(lyric_mask))
+            lyric_token_ids = torch.where(
+                full_cfg_condition_mask.unsqueeze(1).bool(),
+                lyric_token_ids,
+                torch.zeros_like(lyric_token_ids),
+            )
+            lyric_mask = torch.where(
+                full_cfg_condition_mask.unsqueeze(1).bool(),
+                lyric_mask,
+                torch.zeros_like(lyric_mask),
+            )
 
         return (
             keys,
@@ -305,10 +392,12 @@ class Pipeline(LightningModule):
         )
 
     def configure_optimizers(self):
-        trainable_params = [p for name, p in self.transformers.named_parameters() if p.requires_grad]
+        trainable_params = [
+            p for name, p in self.transformers.named_parameters() if p.requires_grad
+        ]
         optimizer = torch.optim.AdamW(
             params=[
-                {'params': trainable_params},
+                {"params": trainable_params},
             ],
             lr=self.hparams.learning_rate,
             weight_decay=self.hparams.weight_decay,
@@ -316,7 +405,7 @@ class Pipeline(LightningModule):
         )
         max_steps = self.hparams.max_steps
         warmup_steps = self.hparams.warmup_steps  # New hyperparameter for warmup steps
-        
+
         # Create a scheduler that first warms up linearly, then decays linearly
         def lr_lambda(current_step):
             if current_step < warmup_steps:
@@ -324,13 +413,13 @@ class Pipeline(LightningModule):
                 return float(current_step) / float(max(1, warmup_steps))
             else:
                 # Linear decay from learning_rate to 0
-                progress = float(current_step - warmup_steps) / float(max(1, max_steps - warmup_steps))
+                progress = float(current_step - warmup_steps) / float(
+                    max(1, max_steps - warmup_steps)
+                )
                 return max(0.0, 1.0 - progress)
-        
+
         lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
-            optimizer,
-            lr_lambda,
-            last_epoch=-1
+            optimizer, lr_lambda, last_epoch=-1
         )
         return [optimizer], lr_scheduler
 
@@ -362,10 +451,17 @@ class Pipeline(LightningModule):
             # See 3.1 in the SD3 paper ($rf/lognorm(0.00,1.00)$).
             # In practice, we sample the random variable u from a normal distribution u ∼ N (u; m, s)
             # and map it through the standard logistic function
-            u = torch.normal(mean=self.hparams.logit_mean, std=self.hparams.logit_std, size=(bsz, ), device="cpu")
+            u = torch.normal(
+                mean=self.hparams.logit_mean,
+                std=self.hparams.logit_std,
+                size=(bsz,),
+                device="cpu",
+            )
             u = torch.nn.functional.sigmoid(u)
             indices = (u * self.scheduler.config.num_train_timesteps).long()
-            indices = torch.clamp(indices, 0, self.scheduler.config.num_train_timesteps - 1)
+            indices = torch.clamp(
+                indices, 0, self.scheduler.config.num_train_timesteps - 1
+            )
             timesteps = self.scheduler.timesteps[indices].to(device)
 
         return timesteps
@@ -394,7 +490,9 @@ class Pipeline(LightningModule):
         timesteps = self.get_timestep(bsz, device)
 
         # Add noise according to flow matching.
-        sigmas = self.get_sd3_sigmas(timesteps=timesteps, device=device, n_dim=target_image.ndim, dtype=dtype)
+        sigmas = self.get_sd3_sigmas(
+            timesteps=timesteps, device=device, n_dim=target_image.ndim, dtype=dtype
+        )
         noisy_image = sigmas * noise + (1.0 - sigmas) * target_image
 
         # This is the flow-matching target for vanilla SD3.
@@ -431,7 +529,11 @@ class Pipeline(LightningModule):
         # Compute loss. Only calculate loss where chunk_mask is 1 and there is no padding
         # N x T x 64
         # N x T -> N x c x W x T
-        mask = attention_mask.unsqueeze(1).unsqueeze(1).expand(-1, target_image.shape[1], target_image.shape[2], -1)
+        mask = (
+            attention_mask.unsqueeze(1)
+            .unsqueeze(1)
+            .expand(-1, target_image.shape[1], target_image.shape[2], -1)
+        )
 
         selected_model_pred = (model_pred * mask).reshape(bsz, -1).contiguous()
         selected_target = (target * mask).reshape(bsz, -1).contiguous()
@@ -443,11 +545,19 @@ class Pipeline(LightningModule):
 
         prefix = "train"
 
-        self.log(f"{prefix}/denoising_loss", loss, on_step=True, on_epoch=False, prog_bar=True)
+        self.log(
+            f"{prefix}/denoising_loss",
+            loss,
+            on_step=True,
+            on_epoch=False,
+            prog_bar=True,
+        )
 
         total_proj_loss = 0.0
         for k, v in proj_losses:
-            self.log(f"{prefix}/{k}_loss", v, on_step=True, on_epoch=False, prog_bar=True)
+            self.log(
+                f"{prefix}/{k}_loss", v, on_step=True, on_epoch=False, prog_bar=True
+            )
             total_proj_loss += v
 
         if len(proj_losses) > 0:
@@ -459,7 +569,13 @@ class Pipeline(LightningModule):
         # Log learning rate if scheduler exists
         if self.lr_schedulers() is not None:
             learning_rate = self.lr_schedulers().get_last_lr()[0]
-            self.log(f"{prefix}/learning_rate", learning_rate, on_step=True, on_epoch=False, prog_bar=True)
+            self.log(
+                f"{prefix}/learning_rate",
+                learning_rate,
+                on_step=True,
+                on_epoch=False,
+                prog_bar=True,
+            )
         # with torch.autograd.detect_anomaly():
         #     self.manual_backward(loss)
         return loss
@@ -496,18 +612,35 @@ class Pipeline(LightningModule):
         )
 
         frame_length = int(duration * 44100 / 512 / 8)
-        timesteps, num_inference_steps = retrieve_timesteps(scheduler, num_inference_steps=infer_steps, device=device, timesteps=None)
+        timesteps, num_inference_steps = retrieve_timesteps(
+            scheduler, num_inference_steps=infer_steps, device=device, timesteps=None
+        )
 
-        target_latents = randn_tensor(shape=(bsz, 8, 16, frame_length), generator=random_generators, device=device, dtype=dtype)
+        target_latents = randn_tensor(
+            shape=(bsz, 8, 16, frame_length),
+            generator=random_generators,
+            device=device,
+            dtype=dtype,
+        )
         attention_mask = torch.ones(bsz, frame_length, device=device, dtype=dtype)
         if do_classifier_free_guidance:
             attention_mask = torch.cat([attention_mask] * 2, dim=0)
-            encoder_text_hidden_states = torch.cat([encoder_text_hidden_states, torch.zeros_like(encoder_text_hidden_states)], 0)
+            encoder_text_hidden_states = torch.cat(
+                [
+                    encoder_text_hidden_states,
+                    torch.zeros_like(encoder_text_hidden_states),
+                ],
+                0,
+            )
             text_attention_mask = torch.cat([text_attention_mask] * 2, dim=0)
 
-            speaker_embds = torch.cat([speaker_embds, torch.zeros_like(speaker_embds)], 0)
+            speaker_embds = torch.cat(
+                [speaker_embds, torch.zeros_like(speaker_embds)], 0
+            )
 
-            lyric_token_ids = torch.cat([lyric_token_ids, torch.zeros_like(lyric_token_ids)], 0)
+            lyric_token_ids = torch.cat(
+                [lyric_token_ids, torch.zeros_like(lyric_token_ids)], 0
+            )
             lyric_mask = torch.cat([lyric_mask, torch.zeros_like(lyric_mask)], 0)
 
         momentum_buffer = MomentumBuffer()
@@ -515,7 +648,9 @@ class Pipeline(LightningModule):
         for i, t in tqdm(enumerate(timesteps), total=num_inference_steps):
             # expand the latents if we are doing classifier free guidance
             latents = target_latents
-            latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
+            latent_model_input = (
+                torch.cat([latents] * 2) if do_classifier_free_guidance else latents
+            )
             timestep = t.expand(latent_model_input.shape[0])
             noise_pred = self.transformers(
                 hidden_states=latent_model_input,
@@ -536,11 +671,17 @@ class Pipeline(LightningModule):
                     guidance_scale=guidance_scale,
                     momentum_buffer=momentum_buffer,
                 )
-            
-            target_latents = scheduler.step(model_output=noise_pred, timestep=t, sample=target_latents, return_dict=False, omega=omega_scale)[0]
-        
+
+            target_latents = scheduler.step(
+                model_output=noise_pred,
+                timestep=t,
+                sample=target_latents,
+                return_dict=False,
+                omega=omega_scale,
+            )[0]
+
         return target_latents
-    
+
     def predict_step(self, batch):
         (
             keys,
@@ -582,7 +723,9 @@ class Pipeline(LightningModule):
         )
 
         audio_lengths = batch["wav_lengths"]
-        sr, pred_wavs = self.dcae.decode(pred_latents, audio_lengths=audio_lengths, sr=48000)
+        sr, pred_wavs = self.dcae.decode(
+            pred_latents, audio_lengths=audio_lengths, sr=48000
+        )
         return {
             "target_wavs": batch["target_wavs"],
             "pred_wavs": pred_wavs,
@@ -603,7 +746,12 @@ class Pipeline(LightningModule):
 
     def plot_step(self, batch, batch_idx):
         global_step = self.global_step
-        if global_step % self.hparams.every_plot_step != 0 or self.local_rank != 0 or torch.distributed.get_rank() != 0 or torch.cuda.current_device() != 0:
+        if (
+            global_step % self.hparams.every_plot_step != 0
+            or self.local_rank != 0
+            or torch.distributed.get_rank() != 0
+            or torch.cuda.current_device() != 0
+        ):
             return
         results = self.predict_step(batch)
 
@@ -615,7 +763,9 @@ class Pipeline(LightningModule):
         sr = results["sr"]
         seeds = results["seeds"]
         i = 0
-        for key, target_wav, pred_wav, prompt, candidate_lyric_chunk, seed in zip(keys, target_wavs, pred_wavs, prompts, candidate_lyric_chunks, seeds):
+        for key, target_wav, pred_wav, prompt, candidate_lyric_chunk, seed in zip(
+            keys, target_wavs, pred_wavs, prompts, candidate_lyric_chunks, seeds
+        ):
             key = key
             prompt = prompt
             lyric = self.construct_lyrics(candidate_lyric_chunk)
@@ -624,9 +774,15 @@ class Pipeline(LightningModule):
             save_dir = f"{log_dir}/eval_results/step_{self.global_step}"
             if not os.path.exists(save_dir):
                 os.makedirs(save_dir, exist_ok=True)
-            torchaudio.save(f"{save_dir}/target_wav_{key}_{i}.flac", target_wav.float().cpu(), sr)
-            torchaudio.save(f"{save_dir}/pred_wav_{key}_{i}.flac", pred_wav.float().cpu(), sr)
-            with open(f"{save_dir}/key_prompt_lyric_{key}_{i}.txt", "w", encoding="utf-8") as f:
+            torchaudio.save(
+                f"{save_dir}/target_wav_{key}_{i}.wav", target_wav.float().cpu(), sr
+            )
+            torchaudio.save(
+                f"{save_dir}/pred_wav_{key}_{i}.wav", pred_wav.float().cpu(), sr
+            )
+            with open(
+                f"{save_dir}/key_prompt_lyric_{key}_{i}.txt", "w", encoding="utf-8"
+            ) as f:
                 f.write(key_prompt_lyric)
             i += 1
 
@@ -642,11 +798,14 @@ def main(args):
         checkpoint_dir=args.checkpoint_dir,
     )
     checkpoint_callback = ModelCheckpoint(
-        monitor=None, every_n_train_steps=args.every_n_train_steps, save_top_k=-1,
+        monitor=None,
+        every_n_train_steps=args.every_n_train_steps,
+        save_top_k=-1,
     )
     # add datetime str to version
     logger_callback = TensorBoardLogger(
-        version=datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + args.exp_name, save_dir=args.logger_dir
+        version=datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + args.exp_name,
+        save_dir=args.logger_dir,
     )
     trainer = Trainer(
         accelerator="gpu",
