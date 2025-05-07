@@ -1326,7 +1326,7 @@ class ACEStepPipeline:
         target_wav_duration_second=30,
         sample_rate=48000,
         save_path=None,
-        format="flac",
+        format="wav",
     ):
         output_audio_paths = []
         bs = latents.shape[0]
@@ -1343,7 +1343,7 @@ class ACEStepPipeline:
         return output_audio_paths
 
     def save_wav_file(
-        self, target_wav, idx, save_path=None, sample_rate=48000, format="flac"
+        self, target_wav, idx, save_path=None, sample_rate=48000, format="wav"
     ):
         if save_path is None:
             logger.warning("save_path is None, using default path ./outputs/")
@@ -1353,14 +1353,15 @@ class ACEStepPipeline:
             base_path = save_path
             ensure_directory_exists(base_path)
 
-        output_path_flac = (
-            f"{base_path}/output_{time.strftime('%Y%m%d%H%M%S')}_{idx}.{format}"
+        output_path_wav = (
+            f"{base_path}/output_{time.strftime('%Y%m%d%H%M%S')}_{idx}.wav"
         )
         target_wav = target_wav.float()
+        print(target_wav)
         torchaudio.save(
-            output_path_flac, target_wav, sample_rate=sample_rate, format=format
+            output_path_wav, target_wav, sample_rate=sample_rate, format=format
         )
-        return output_path_flac
+        return output_path_wav
 
     def infer_latents(self, input_audio_path):
         if input_audio_path is None:
@@ -1404,7 +1405,7 @@ class ACEStepPipeline:
         edit_n_max: float = 1.0,
         edit_n_avg: int = 1,
         save_path: str = None,
-        format: str = "flac",
+        format: str = "wav",
         batch_size: int = 1,
         debug: bool = False,
     ):

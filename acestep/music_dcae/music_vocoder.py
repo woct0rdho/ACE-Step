@@ -574,7 +574,7 @@ class ADaMoSHiFiGANV1(ModelMixin, ConfigMixin, FromOriginalModelMixin):
 if __name__ == "__main__":
     import soundfile as sf
 
-    x = "test_audio.flac"
+    x = "test_audio.wav"
     model = ADaMoSHiFiGANV1.from_pretrained(
         "./checkpoints/music_vocoder", local_files_only=True
     )
@@ -584,4 +584,4 @@ if __name__ == "__main__":
     mel = model.encode(wav)
 
     wav = model.decode(mel)[0].mT
-    sf.write("test_audio_vocoder_rec.flac", wav.cpu().numpy(), 44100)
+    sf.write("test_audio_vocoder_rec.wav", wav.cpu().numpy(), 44100)

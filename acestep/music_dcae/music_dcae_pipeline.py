@@ -164,5 +164,5 @@ if __name__ == "__main__":
     print("latents shape: ", latents.shape)
     print("latent_lengths: ", latent_lengths)
     print("sr: ", sr)
-    torchaudio.save("test_reconstructed.flac", pred_wavs[0], sr)
-    print("test_reconstructed.flac")
+    torchaudio.save("test_reconstructed.wav", pred_wavs[0], sr)
+    print("test_reconstructed.wav")

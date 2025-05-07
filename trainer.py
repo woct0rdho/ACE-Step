@@ -775,10 +775,10 @@ class Pipeline(LightningModule):
             if not os.path.exists(save_dir):
                 os.makedirs(save_dir, exist_ok=True)
             torchaudio.save(
-                f"{save_dir}/target_wav_{key}_{i}.flac", target_wav.float().cpu(), sr
+                f"{save_dir}/target_wav_{key}_{i}.wav", target_wav.float().cpu(), sr
             )
             torchaudio.save(
-                f"{save_dir}/pred_wav_{key}_{i}.flac", pred_wav.float().cpu(), sr
+                f"{save_dir}/pred_wav_{key}_{i}.wav", pred_wav.float().cpu(), sr
             )
             with open(
                 f"{save_dir}/key_prompt_lyric_{key}_{i}.txt", "w", encoding="utf-8"

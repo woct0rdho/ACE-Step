@@ -37,7 +37,7 @@ A Step Towards Music Generation Foundation Model
 ### Quick Start
 
 ```bash
-pip install ace-step
+pip install git+https://github.com/ace-step/ACE-Step
 ```
 
 On Windows, you may need to run the following before running the command above:
