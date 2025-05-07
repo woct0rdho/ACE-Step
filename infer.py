@@ -1,16 +1,5 @@
-import argparse
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--checkpoint_path", type=str, default="")
-parser.add_argument("--bf16", type=bool, default=True)
-parser.add_argument("--torch_compile", type=bool, default=False)
-parser.add_argument("--device_id", type=int, default=0)
-parser.add_argument("--output_path", type=str, default=None)
-args = parser.parse_args()
-
+import click
 import os
-
-os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device_id)
 
 from acestep.pipeline_ace_step import ACEStepPipeline
 from acestep.data_sampler import DataSampler
@@ -43,12 +32,23 @@ def sample_data(json_data):
     )
 
 
-def main(args):
+@click.command()
+@click.option(
+    "--checkpoint_path", type=str, default="", help="Path to the checkpoint directory"
+)
+@click.option("--bf16", type=bool, default=True, help="Whether to use bfloat16")
+@click.option(
+    "--torch_compile", type=bool, default=False, help="Whether to use torch compile"
+)
+@click.option("--device_id", type=int, default=0, help="Device ID to use")
+@click.option("--output_path", type=str, default=None, help="Path to save the output")
+def main(checkpoint_path, bf16, torch_compile, device_id, output_path):
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(device_id)
 
     model_demo = ACEStepPipeline(
-        checkpoint_dir=args.checkpoint_path,
-        dtype="bfloat16" if args.bf16 else "float32",
-        torch_compile=args.torch_compile,
+        checkpoint_dir=checkpoint_path,
+        dtype="bfloat16" if bf16 else "float32",
+        torch_compile=torch_compile,
     )
     print(model_demo)
 
@@ -98,9 +98,9 @@ def main(args):
         oss_steps,
         guidance_scale_text,
         guidance_scale_lyric,
-        save_path=args.output_path,
+        save_path=output_path,
     )
 
 
 if __name__ == "__main__":
-    main(args)
+    main()
