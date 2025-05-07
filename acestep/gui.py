@@ -16,7 +16,10 @@ from acestep.data_sampler import DataSampler
 
 @click.command()
 @click.option(
-    "--checkpoint_path", type=str, default="", help="Path to the checkpoint directory. Downloads automatically if empty."
+    "--checkpoint_path",
+    type=str,
+    default="",
+    help="Path to the checkpoint directory. Downloads automatically if empty.",
 )
 @click.option(
     "--server_name",
@@ -35,7 +38,10 @@ from acestep.data_sampler import DataSampler
     help="Whether to create a public, shareable link for the Gradio app.",
 )
 @click.option(
-    "--bf16", is_flag=True, default=True, help="Whether to use bfloat16 precision. Turn off if using MPS."
+    "--bf16",
+    is_flag=True,
+    default=True,
+    help="Whether to use bfloat16 precision. Turn off if using MPS.",
 )
 @click.option(
     "--torch_compile", is_flag=True, default=False, help="Whether to use torch.compile."
