@@ -32,7 +32,7 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 
 ## 📢 News and Updates
 
-- 🚀 **2025.05.07:** [ComfyUI_ACE-Step](https://github.com/billwuhao/ComfyUI_ACE-Step) node is now available! Explore the power of ACE-Step within ComfyUI. 🎉🎉🎉
+- 🚀 **2025.05.07:** [ComfyUI_ACE-Step](https://github.com/billwuhao/ComfyUI_ACE-Step) node is now available! Explore the power of ACE-Step within ComfyUI. 🎉
 - 🚀 2025.05.06: Open source demo code and model
 
 
@@ -413,10 +413,6 @@ Example LoRA configuration file (lora_config.json):
 - `--gradient_clip_algorithm`: Gradient clipping algorithm (default: "norm")
 - `--reload_dataloaders_every_n_epochs`: Frequency to reload dataloaders (default: 1)
 - `--val_check_interval`: Validation check interval (default: None)
-
-## ⭐ Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=ace-step/ACE-Step&type=Date)](https://www.star-history.com/#ace-step/ACE-Step&Date)
 
 
 ## 📜 License & Disclaimer
