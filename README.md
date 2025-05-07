@@ -15,101 +15,11 @@
 
 ## Table of Contents
 
-- [Installation](#-installation)
-- [Features](#-features)
-- [Usage](#-usage)
-- [Train](#-train)
-
-## 📢 News and Updates
-
-- 🚀 2025.05.06: Open source demo code and model
-
-## 📋 Roadmap
-
-- [x] Release training code 🔥
-- [x] Release LoRA training code 🔥
-- [ ] Release RapMachine LoRA 🎤
-- [ ] Release ControlNet training code 🔥
-- [ ] Release Singing2Accompaniment ControlNet 🎮
-- [ ] Release evaluation performance and technical report 📄
-
-## 📦 Installation
-
-### Clone repositories
-```bash
-git clone https://github.com/ace-step/ACE-Step.git
-cd ACE-Step
-```
-
-### Prerequisites
-* Make sure you have Python installed. You can download it from [python.org](https://www.python.org/).
-* You will also need either `Conda` (recommended) or `venv`.
-
-### Environment Setup
-
-It is highly recommended to use a virtual environment to manage project dependencies and avoid conflicts. Choose **one** of the following methods (Conda or venv):
-
-#### Option 1: Using Conda
-
-1.  **Create the environment** named `ace_step` with Python 3.10:
-    ```bash
-    conda create -n ace_step python=3.10 -y
-    ```
-
-2.  **Activate the environment:**
-    ```bash
-    conda activate ace_step
-    ```
-
-#### Option 2: Using venv
-
-1.  **Ensure you are using the correct Python version.**
-
-2.  **Create the virtual environment** (commonly named `venv`):
-    ```bash
-    python -m venv venv 
-    ```
-
-3.  **Activate the environment:**
-    * **On Windows (cmd.exe):**
-        ```bash
-        venv\Scripts\activate.bat
-        ```
-    * **On Windows (PowerShell):**
-        ```powershell
-        .\venv\Scripts\Activate.ps1 
-        ```
-        *(If you encounter execution policy errors, you might need to run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process` first)*
-    * **On Linux / macOS (bash/zsh):**
-        ```bash
-        source venv/bin/activate
-        ```
-
-### Install Dependencies
-On Windows, you need to run the following first:
-
-```bash
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
-```
-
-Then, run
-```bash
-pip install -e .
-```
-
-Then, launch the GUI:
-
-```bash
-acestep --port 7865
-```
-
-The GUI works on Windows, macOS, and Linux.
-
-## 🏗️ Architecture
-
-<p align="center">
-    <img src="./assets/ACE-Step_framework.png" width="100%" alt="ACE-Step Framework">
-</p>
+- [✨ Features](#-features)
+- [📦 Installation](#-installation)
+- [🚀 Usage](#-usage)
+- [📱 User Interface Guide](#-user-interface-guide)
+- [🔨 Train](#-train)
 
 ## 📝 Abstract
 
@@ -118,6 +28,13 @@ We introduce ACE-Step, a novel open-source foundation model for music generation
 ACE-Step bridges this gap by integrating diffusion-based generation with Sana’s Deep Compression AutoEncoder (DCAE) and a lightweight linear transformer. It further leverages MERT and m-hubert to align semantic representations (REPA) during training, enabling rapid convergence. As a result, our model synthesizes up to 4 minutes of music in just 20 seconds on an A100 GPU—15× faster than LLM-based baselines—while achieving superior musical coherence and lyric alignment across melody, harmony, and rhythm metrics. Moreover, ACE-Step preserves fine-grained acoustic details, enabling advanced control mechanisms such as voice cloning, lyric editing, remixing, and track generation (e.g., lyric2vocal, singing2accompaniment).
 
 Rather than building yet another end-to-end text-to-music pipeline, our vision is to establish a foundation model for music AI: a fast, general-purpose, efficient yet flexible architecture that makes it easy to train sub-tasks on top of it. This paves the way for developing powerful tools that seamlessly integrate into the creative workflows of music artists, producers, and content creators. In short, we aim to build the Stable Diffusion moment for music.
+
+
+## 📢 News and Updates
+
+- 🚀 **2025.05.07:** [ComfyUI_ACE-Step](https://github.com/billwuhao/ComfyUI_ACE-Step) node is now available! Explore the power of ACE-Step within ComfyUI. 🎉🎉🎉
+- 🚀 2025.05.06: Open source demo code and model
+
 
 ## ✨ Features
 
@@ -204,6 +121,16 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 - 🎸 Creates full instrumental backing that complements the input vocals, making it easy to add professional-sounding accompaniment to any vocal recording
 
 
+## 📋 Roadmap
+
+- [x] Release training code 🔥
+- [x] Release LoRA training code 🔥
+- [ ] Release RapMachine LoRA 🎤
+- [ ] Release ControlNet training code 🔥
+- [ ] Release Singing2Accompaniment ControlNet 🎮
+- [ ] Release evaluation performance and technical report 📄
+
+
 ## 🖥️ Hardware Performance
 
 We have evaluated ACE-Step across different hardware setups, yielding the following throughput results:
@@ -217,6 +144,79 @@ We have evaluated ACE-Step across different hardware setups, yielding the follow
 
 
 We use RTF (Real-Time Factor) to measure the performance of ACE-Step. Higher values indicate faster generation speed. 27.27x means to generate 1 minute of music, it takes 2.2 seconds (60/27.27). The performance is measured on a single GPU with batch size 1 and 27 steps.
+
+
+## 📦 Installation
+
+### 1. Clone the Repository
+First, clone the ACE-Step repository to your local machine and navigate into the project directory:
+```bash
+git clone https://github.com/ace-step/ACE-Step.git
+cd ACE-Step
+```
+
+### 2. Prerequisites
+Ensure you have the following installed:
+
+* `Python`: Version 3.10 or later is recommended. You can download it from [python.org](https://www.python.org/).
+* `Conda` or `venv`: For creating a virtual environment (Conda is recommended).
+
+### 3. Set Up a Virtual Environment
+
+It is highly recommended to use a virtual environment to manage project dependencies and avoid conflicts. Choose one of the following methods:
+
+#### Option A: Using Conda
+
+1.  **Create the environment** named `ace_step` with Python 3.10:
+    ```bash
+    conda create -n ace_step python=3.10 -y
+    ```
+
+2.  **Activate the environment:**
+    ```bash
+    conda activate ace_step
+    ```
+
+#### Option B: Using venv
+
+1.  **Navigate to the cloned ACE-Step directory.**
+
+2.  **Create the virtual environment** (commonly named `venv`):
+    ```bash
+    python -m venv venv 
+    ```
+
+3.  **Activate the environment:**
+    * **On Windows (cmd.exe):**
+        ```bash
+        venv\Scripts\activate.bat
+        ```
+    * **On Windows (PowerShell):**
+        ```powershell
+        .\venv\Scripts\Activate.ps1 
+        ```
+        *(If you encounter execution policy errors, you might need to run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process` first)*
+    * **On Linux / macOS (bash/zsh):**
+        ```bash
+        source venv/bin/activate
+        ```
+
+### 4. Install Dependencies
+Once your virtual environment is activated:
+**a.** (Windows Only) If you are on Windows and plan to use an NVIDIA GPU, install PyTorch with CUDA support first:
+
+```bash
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+```
+(Adjust cu126 if you have a different CUDA version. For other PyTorch installation options, refer to the [official PyTorch website](https://pytorch.org/get-started/locally/)).
+
+**b.** Install ACE-Step and its core dependencies:
+```bash
+pip install -e .
+```
+
+The ACE-Step application is now installed. The GUI works on Windows, macOS, and Linux. For instructions on how to run it, please see the [Usage](#-usage) section.
+
 
 ## 🚀 Usage
 
@@ -237,6 +237,18 @@ acestep --checkpoint_path /path/to/checkpoint --port 7865 --device_id 0 --share 
 If you are using macOS, please use `--bf16 false` to avoid errors.
 
 #### 🔍 API Usage
+If you intend to integrate ACE-Step as a library into your own Python projects, you can install the latest version directly from GitHub using the following pip command.
+
+**Direct Installation via pip:**
+
+1.  **Ensure Git is installed:** This method requires Git to be installed on your system and accessible in your system's PATH.
+2.  **Execute the installation command:**
+    ```bash
+    pip install git+[https://github.com/ace-step/ACE-Step.git](https://github.com/ace-step/ACE-Step.git)
+    ```
+    It's recommended to use this command within a virtual environment to avoid conflicts with other packages.
+
+Once the installation is complete, you can import and use the ACE-Step API as shown below:
 
 ```python
 from acestep.api import ACEStep
@@ -247,7 +259,7 @@ audio_out = model.infer(
     prompt="upbeat pop, catchy melody, female singer",
     lyrics="[verse]\nSun is shining bright today\nFeeling happy, come what may",
     audio_duration=5.0, # 5 seconds
-    infer_step=20        # Fewer steps for speed
+    infer_step=20  # Fewer steps for speed
 )
 
 audio_out.save_wav("output.wav")
@@ -306,6 +318,12 @@ The ACE-Step interface provides several tabs for different music generation and 
 ## 📂 Examples
 
 The `examples/input_params` directory contains sample input parameters that can be used as references for generating music.
+
+## 🏗️ Architecture
+
+<p align="center">
+    <img src="./assets/ACE-Step_framework.png" width="100%" alt="ACE-Step Framework">
+</p>
 
 ## 🔨 Train
 
@@ -395,6 +413,11 @@ Example LoRA configuration file (lora_config.json):
 - `--gradient_clip_algorithm`: Gradient clipping algorithm (default: "norm")
 - `--reload_dataloaders_every_n_epochs`: Frequency to reload dataloaders (default: 1)
 - `--val_check_interval`: Validation check interval (default: None)
+
+## ⭐ Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=ace-step/ACE-Step&type=Date)](https://www.star-history.com/#ace-step/ACE-Step&Date)
+
 
 ## 📜 License & Disclaimer
 
