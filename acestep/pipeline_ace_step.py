@@ -100,7 +100,8 @@ class ACEStepPipeline:
     ):
         if not checkpoint_dir:
             if persistent_storage_path is None:
-                checkpoint_dir = os.path.join(os.path.dirname(__file__), "checkpoints")
+                checkpoint_dir = os.path.join(os.path.expanduser("~"), ".cache/ace-step/checkpoints")
+                os.makedirs(checkpoint_dir, exist_ok=True)
             else:
                 checkpoint_dir = os.path.join(persistent_storage_path, "checkpoints")
         ensure_directory_exists(checkpoint_dir)
@@ -167,15 +168,13 @@ class ACEStepPipeline:
                 repo_id=REPO_ID,
                 subfolder="music_dcae_f8c8",
                 filename="config.json",
-                local_dir=checkpoint_dir,
-                local_dir_use_symlinks=False,
+                cache_dir=checkpoint_dir,
             )
             hf_hub_download(
                 repo_id=REPO_ID,
                 subfolder="music_dcae_f8c8",
                 filename="diffusion_pytorch_model.safetensors",
-                local_dir=checkpoint_dir,
-                local_dir_use_symlinks=False,
+                cache_dir=checkpoint_dir,
             )
 
             # download vocoder model
@@ -184,15 +183,13 @@ class ACEStepPipeline:
                 repo_id=REPO_ID,
                 subfolder="music_vocoder",
                 filename="config.json",
-                local_dir=checkpoint_dir,
-                local_dir_use_symlinks=False,
+                cache_dir=checkpoint_dir,
             )
             hf_hub_download(
                 repo_id=REPO_ID,
                 subfolder="music_vocoder",
                 filename="diffusion_pytorch_model.safetensors",
-                local_dir=checkpoint_dir,
-                local_dir_use_symlinks=False,
+                cache_dir=checkpoint_dir,
             )
 
             # download ace_step transformer model
@@ -201,15 +198,13 @@ class ACEStepPipeline:
                 repo_id=REPO_ID,
                 subfolder="ace_step_transformer",
                 filename="config.json",
-                local_dir=checkpoint_dir,
-                local_dir_use_symlinks=False,
+                cache_dir=checkpoint_dir,
             )
             hf_hub_download(
                 repo_id=REPO_ID,
                 subfolder="ace_step_transformer",
                 filename="diffusion_pytorch_model.safetensors",
-                local_dir=checkpoint_dir,
-                local_dir_use_symlinks=False,
+                cache_dir=checkpoint_dir,
             )
 
             # download text encoder model
@@ -218,36 +213,31 @@ class ACEStepPipeline:
                 repo_id=REPO_ID,
                 subfolder="umt5-base",
                 filename="config.json",
-                local_dir=checkpoint_dir,
-                local_dir_use_symlinks=False,
+                cache_dir=checkpoint_dir,
             )
             hf_hub_download(
                 repo_id=REPO_ID,
                 subfolder="umt5-base",
                 filename="model.safetensors",
-                local_dir=checkpoint_dir,
-                local_dir_use_symlinks=False,
+                cache_dir=checkpoint_dir,
             )
             hf_hub_download(
                 repo_id=REPO_ID,
                 subfolder="umt5-base",
                 filename="special_tokens_map.json",
                 local_dir=checkpoint_dir,
-                local_dir_use_symlinks=False,
             )
             hf_hub_download(
                 repo_id=REPO_ID,
                 subfolder="umt5-base",
                 filename="tokenizer_config.json",
                 local_dir=checkpoint_dir,
-                local_dir_use_symlinks=False,
             )
             hf_hub_download(
                 repo_id=REPO_ID,
                 subfolder="umt5-base",
                 filename="tokenizer.json",
                 local_dir=checkpoint_dir,
-                local_dir_use_symlinks=False,
             )
 
             logger.info("Models downloaded")
@@ -1359,6 +1349,7 @@ class ACEStepPipeline:
             f"{base_path}/output_{time.strftime('%Y%m%d%H%M%S')}_{idx}.wav"
         )
         target_wav = target_wav.float()
+        print(target_wav)
         torchaudio.save(
             output_path_wav, target_wav, sample_rate=sample_rate, format=format
         )
