@@ -116,6 +116,8 @@ class ACEStepPipeline:
         self.dtype = torch.bfloat16 if dtype == "bfloat16" else torch.float32
         if device.type == "mps" and self.dtype == torch.bfloat16:
             self.dtype = torch.float16
+        if device.type == "mps":
+            self.dtype = torch.float32
         self.device = device
         self.loaded = False
         self.torch_compile = torch_compile
