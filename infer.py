@@ -1,106 +1,106 @@
-import click
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List, Optional
 import os
-
 from acestep.pipeline_ace_step import ACEStepPipeline
 from acestep.data_sampler import DataSampler
+import uuid
 
+app = FastAPI(title="ACEStep Pipeline API")
 
-def sample_data(json_data):
-    return (
-        json_data["audio_duration"],
-        json_data["prompt"],
-        json_data["lyrics"],
-        json_data["infer_step"],
-        json_data["guidance_scale"],
-        json_data["scheduler_type"],
-        json_data["cfg_type"],
-        json_data["omega_scale"],
-        ", ".join(map(str, json_data["actual_seeds"])),
-        json_data["guidance_interval"],
-        json_data["guidance_interval_decay"],
-        json_data["min_guidance_scale"],
-        json_data["use_erg_tag"],
-        json_data["use_erg_lyric"],
-        json_data["use_erg_diffusion"],
-        ", ".join(map(str, json_data["oss_steps"])),
-        json_data["guidance_scale_text"] if "guidance_scale_text" in json_data else 0.0,
-        (
-            json_data["guidance_scale_lyric"]
-            if "guidance_scale_lyric" in json_data
-            else 0.0
-        ),
-    )
+class ACEStepInput(BaseModel):
+    checkpoint_path: str
+    bf16: bool = True
+    torch_compile: bool = False
+    device_id: int = 0
+    output_path: Optional[str] = None
+    audio_duration: float
+    prompt: str
+    lyrics: str
+    infer_step: int
+    guidance_scale: float
+    scheduler_type: str
+    cfg_type: str
+    omega_scale: float
+    actual_seeds: List[int]
+    guidance_interval: float
+    guidance_interval_decay: float
+    min_guidance_scale: float
+    use_erg_tag: bool
+    use_erg_lyric: bool
+    use_erg_diffusion: bool
+    oss_steps: List[int]
+    guidance_scale_text: float = 0.0
+    guidance_scale_lyric: float = 0.0
 
+class ACEStepOutput(BaseModel):
+    status: str
+    output_path: Optional[str]
+    message: str
 
-@click.command()
-@click.option(
-    "--checkpoint_path", type=str, default="", help="Path to the checkpoint directory"
-)
-@click.option("--bf16", type=bool, default=True, help="Whether to use bfloat16")
-@click.option(
-    "--torch_compile", type=bool, default=False, help="Whether to use torch compile"
-)
-@click.option("--device_id", type=int, default=0, help="Device ID to use")
-@click.option("--output_path", type=str, default=None, help="Path to save the output")
-def main(checkpoint_path, bf16, torch_compile, device_id, output_path):
+def initialize_pipeline(checkpoint_path: str, bf16: bool, torch_compile: bool, device_id: int) -> ACEStepPipeline:
     os.environ["CUDA_VISIBLE_DEVICES"] = str(device_id)
-
-    model_demo = ACEStepPipeline(
+    return ACEStepPipeline(
         checkpoint_dir=checkpoint_path,
         dtype="bfloat16" if bf16 else "float32",
         torch_compile=torch_compile,
     )
-    print(model_demo)
 
-    data_sampler = DataSampler()
+@app.post("/generate", response_model=ACEStepOutput)
+async def generate_audio(input_data: ACEStepInput):
+    try:
+        # Initialize pipeline
+        model_demo = initialize_pipeline(
+            input_data.checkpoint_path,
+            input_data.bf16,
+            input_data.torch_compile,
+            input_data.device_id
+        )
 
-    json_data = data_sampler.sample()
-    json_data = sample_data(json_data)
-    print(json_data)
+        # Prepare parameters
+        params = (
+            input_data.audio_duration,
+            input_data.prompt,
+            input_data.lyrics,
+            input_data.infer_step,
+            input_data.guidance_scale,
+            input_data.scheduler_type,
+            input_data.cfg_type,
+            input_data.omega_scale,
+            ", ".join(map(str, input_data.actual_seeds)),
+            input_data.guidance_interval,
+            input_data.guidance_interval_decay,
+            input_data.min_guidance_scale,
+            input_data.use_erg_tag,
+            input_data.use_erg_lyric,
+            input_data.use_erg_diffusion,
+            ", ".join(map(str, input_data.oss_steps)),
+            input_data.guidance_scale_text,
+            input_data.guidance_scale_lyric,
+        )
 
-    (
-        audio_duration,
-        prompt,
-        lyrics,
-        infer_step,
-        guidance_scale,
-        scheduler_type,
-        cfg_type,
-        omega_scale,
-        manual_seeds,
-        guidance_interval,
-        guidance_interval_decay,
-        min_guidance_scale,
-        use_erg_tag,
-        use_erg_lyric,
-        use_erg_diffusion,
-        oss_steps,
-        guidance_scale_text,
-        guidance_scale_lyric,
-    ) = json_data
+        # Generate output path if not provided
+        output_path = input_data.output_path or f"output_{uuid.uuid4().hex}.wav"
 
-    model_demo(
-        audio_duration,
-        prompt,
-        lyrics,
-        infer_step,
-        guidance_scale,
-        scheduler_type,
-        cfg_type,
-        omega_scale,
-        manual_seeds,
-        guidance_interval,
-        guidance_interval_decay,
-        min_guidance_scale,
-        use_erg_tag,
-        use_erg_lyric,
-        use_erg_diffusion,
-        oss_steps,
-        guidance_scale_text,
-        guidance_scale_lyric,
-        save_path=output_path,
-    )
+        # Run pipeline
+        model_demo(
+            *params,
+            save_path=output_path
+        )
 
+        return ACEStepOutput(
+            status="success",
+            output_path=output_path,
+            message="Audio generated successfully"
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating audio: {str(e)}")
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
 
 if __name__ == "__main__":
-    main()
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
