@@ -32,7 +32,10 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 
 ## 📢 News and Updates
 
-- 🚀 **2025.05.07:** [ComfyUI_ACE-Step](https://github.com/billwuhao/ComfyUI_ACE-Step) node is now available! Explore the power of ACE-Step within ComfyUI. 🎉
+- 🚀 **2025.05.08:** [ComfyUI_ACE-Step](https://t.co/GeRSTrIvn0) node is now available! Explore the power of ACE-Step within ComfyUI. 🎉
+![image](https://github.com/user-attachments/assets/0a13d90a-9086-47ee-abab-976bad20fa7c)
+
+
 - 🚀 2025.05.06: Open source demo code and model
 
 
