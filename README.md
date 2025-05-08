@@ -244,26 +244,9 @@ If you intend to integrate ACE-Step as a library into your own Python projects, 
 1.  **Ensure Git is installed:** This method requires Git to be installed on your system and accessible in your system's PATH.
 2.  **Execute the installation command:**
     ```bash
-    pip install git+[https://github.com/ace-step/ACE-Step.git](https://github.com/ace-step/ACE-Step.git)
+    pip install git+https://github.com/ace-step/ACE-Step.git
     ```
     It's recommended to use this command within a virtual environment to avoid conflicts with other packages.
-
-Once the installation is complete, you can import and use the ACE-Step API as shown below:
-
-```python
-from acestep.api import ACEStep
-
-model = ACEStep()
-
-audio_out = model.infer(
-    prompt="upbeat pop, catchy melody, female singer",
-    lyrics="[verse]\nSun is shining bright today\nFeeling happy, come what may",
-    audio_duration=5.0, # 5 seconds
-    infer_step=20  # Fewer steps for speed
-)
-
-audio_out.save_wav("output.wav")
-```
 
 #### 🛠️ Command Line Arguments
 
@@ -337,6 +320,7 @@ The `examples/input_params` directory contains sample input parameters that can 
 
 3. Prepare your dataset in Huggingface format ([Huggingface Datasets documentation](https://huggingface.co/docs/datasets/index)). The dataset should contain the following fields:
    - `keys`: Unique identifier for each audio sample
+   - `filename`: Path to the audio file
    - `tags`: List of descriptive tags (e.g., `["pop", "rock"]`)
    - `norm_lyrics`: Normalized lyrics text
    - Optional fields:
@@ -347,6 +331,7 @@ Example dataset entry:
 ```json
 {
 	"keys": "1ce52937-cd1d-456f-967d-0f1072fcbb58",
+	"filename": "data/audio/1ce52937-cd1d-456f-967d-0f1072fcbb58.wav",
 	"tags": ["pop", "acoustic", "ballad", "romantic", "emotional"],
 	"speaker_emb_path": "",
 	"norm_lyrics": "I love you, I love you, I love you",
