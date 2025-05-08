@@ -33,18 +33,18 @@ from acestep.data_sampler import DataSampler
 @click.option("--device_id", type=int, default=0, help="The CUDA device ID to use.")
 @click.option(
     "--share",
-    is_flag=True,
+    type=click.BOOL,
     default=False,
     help="Whether to create a public, shareable link for the Gradio app.",
 )
 @click.option(
     "--bf16",
-    is_flag=True,
+    type=click.BOOL,
     default=True,
     help="Whether to use bfloat16 precision. Turn off if using MPS.",
 )
 @click.option(
-    "--torch_compile", is_flag=True, default=False, help="Whether to use torch.compile."
+    "--torch_compile", type=click.BOOL, default=False, help="Whether to use torch.compile."
 )
 def main(checkpoint_path, server_name, port, device_id, share, bf16, torch_compile):
     """
