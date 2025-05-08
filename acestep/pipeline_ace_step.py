@@ -44,6 +44,7 @@ from acestep.apg_guidance import (
     cfg_double_condition_forward,
 )
 import torchaudio
+from .cpu_offload import cpu_offload
 
 
 torch.backends.cudnn.benchmark = False
@@ -96,6 +97,7 @@ class ACEStepPipeline:
         text_encoder_checkpoint_path=None,
         persistent_storage_path=None,
         torch_compile=False,
+        cpu_offload=False,
         **kwargs,
     ):
         if not checkpoint_dir:
@@ -121,6 +123,7 @@ class ACEStepPipeline:
         self.device = device
         self.loaded = False
         self.torch_compile = torch_compile
+        self.cpu_offload = cpu_offload
 
     def load_checkpoint(self, checkpoint_dir=None):
         device = self.device
@@ -261,12 +264,20 @@ class ACEStepPipeline:
             dcae_checkpoint_path=dcae_checkpoint_path,
             vocoder_checkpoint_path=vocoder_checkpoint_path,
         )
-        self.music_dcae.to(device).eval().to(self.dtype)
+        # self.music_dcae.to(device).eval().to(self.dtype)
+        if self.cpu_offload: # might be redundant
+            self.music_dcae = self.music_dcae.to("cpu").eval().to(self.dtype)
+        else:
+            self.music_dcae = self.music_dcae.to(device).eval().to(self.dtype)
 
         self.ace_step_transformer = ACEStepTransformer2DModel.from_pretrained(
             ace_step_checkpoint_path, torch_dtype=self.dtype
         )
-        self.ace_step_transformer.to(device).eval().to(self.dtype)
+        # self.ace_step_transformer.to(device).eval().to(self.dtype)
+        if self.cpu_offload:
+            self.ace_step_transformer = self.ace_step_transformer.to("cpu").eval().to(self.dtype)
+        else:
+            self.ace_step_transformer = self.ace_step_transformer.to(device).eval().to(self.dtype)
 
         lang_segment = LangSegment()
 
@@ -376,7 +387,11 @@ class ACEStepPipeline:
         text_encoder_model = UMT5EncoderModel.from_pretrained(
             text_encoder_checkpoint_path, torch_dtype=self.dtype
         ).eval()
-        text_encoder_model = text_encoder_model.to(device).to(self.dtype)
+        # text_encoder_model = text_encoder_model.to(device).to(self.dtype)
+        if self.cpu_offload:
+            text_encoder_model = text_encoder_model.to("cpu").eval().to(self.dtype)
+        else:
+            text_encoder_model = text_encoder_model.to(device).eval().to(self.dtype)
         text_encoder_model.requires_grad_(False)
         self.text_encoder_model = text_encoder_model
         self.text_tokenizer = AutoTokenizer.from_pretrained(
@@ -390,6 +405,7 @@ class ACEStepPipeline:
             self.ace_step_transformer = torch.compile(self.ace_step_transformer)
             self.text_encoder_model = torch.compile(self.text_encoder_model)
 
+    @cpu_offload("text_encoder_model")
     def get_text_embeddings(self, texts, device, text_max_length=256):
         inputs = self.text_tokenizer(
             texts,
@@ -407,6 +423,7 @@ class ACEStepPipeline:
         attention_mask = inputs["attention_mask"]
         return last_hidden_states, attention_mask
 
+    @cpu_offload("text_encoder_model")
     def get_text_embeddings_null(
         self, texts, device, text_max_length=256, tau=0.01, l_min=8, l_max=10
     ):
@@ -518,6 +535,7 @@ class ACEStepPipeline:
                 print("tokenize error", e, "for line", line, "major_language", lang)
         return lyric_token_idx
 
+    @cpu_offload("ace_step_transformer")
     def calc_v(
         self,
         zt_src,
@@ -806,6 +824,7 @@ class ACEStepPipeline:
         target_latents = zt_edit if xt_tar is None else xt_tar
         return target_latents
 
+    @cpu_offload("ace_step_transformer")
     @torch.no_grad()
     def text2music_diffusion_process(
         self,
@@ -1322,6 +1341,7 @@ class ACEStepPipeline:
                 )
         return target_latents
 
+    @cpu_offload("music_dcae")
     def latents2audio(
         self,
         latents,
@@ -1364,6 +1384,7 @@ class ACEStepPipeline:
         )
         return output_path_wav
 
+    @cpu_offload("music_dcae")
     def infer_latents(self, input_audio_path):
         if input_audio_path is None:
             return None
