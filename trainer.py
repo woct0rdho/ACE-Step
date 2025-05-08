@@ -62,11 +62,6 @@ class Pipeline(LightningModule):
         # Initialize scheduler
         self.scheduler = self.get_scheduler()
 
-        # Initialize local_rank for distributed training
-        self.local_rank = 0
-        if torch.distributed.is_initialized():
-            self.local_rank = torch.distributed.get_rank()
-
         # step 1: load model
         acestep_pipeline = ACEStepPipeline(checkpoint_dir)
         acestep_pipeline.load_checkpoint(checkpoint_dir)
