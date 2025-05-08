@@ -5,7 +5,7 @@ setup(
     description="ACE Step: A Step Towards Music Generation Foundation Model",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
-    version="0.1.0",
+    version="0.1.1",
     packages=find_namespace_packages(),
     install_requires=open("requirements.txt", encoding="utf-8").read().splitlines(),
     author="ACE Studio, StepFun AI",
