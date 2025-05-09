@@ -30,7 +30,7 @@ from diffusers.pipelines.stable_diffusion_3.pipeline_stable_diffusion_3 import (
     retrieve_timesteps,
 )
 from diffusers.utils.torch_utils import randn_tensor
-from transformers import UMT5EncoderModel, AutoTokenizer, AutoConfig
+from transformers import UMT5EncoderModel, AutoTokenizer
 
 from acestep.language_segmentation import LangSegment
 from acestep.music_dcae.music_dcae_pipeline import MusicDCAE
