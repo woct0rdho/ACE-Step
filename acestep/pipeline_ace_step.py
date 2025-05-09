@@ -44,6 +44,7 @@ from acestep.apg_guidance import (
     cfg_double_condition_forward,
 )
 import torchaudio
+import librosa
 from .cpu_offload import cpu_offload
 
 
@@ -846,6 +847,27 @@ class ACEStepPipeline:
         target_latents = zt_edit if xt_tar is None else xt_tar
         return target_latents
 
+    def add_latents_noise(
+        self,
+        gt_latents,
+        variance,
+        noise,
+        scheduler,
+    ):
+
+        bsz = gt_latents.shape[0]
+        u = torch.tensor([variance] * bsz, dtype=gt_latents.dtype)
+        indices = (u * scheduler.config.num_train_timesteps).long()
+        timesteps = scheduler.timesteps.unsqueeze(1).to(gt_latents.dtype)
+        indices = indices.to(timesteps.device).to(gt_latents.dtype).unsqueeze(1)
+        nearest_idx = torch.argmin(torch.cdist(indices, timesteps), dim=1)
+        sigma = scheduler.sigmas[nearest_idx].flatten().to(gt_latents.device).to(gt_latents.dtype)
+        while len(sigma.shape) < gt_latents.ndim:
+            sigma = sigma.unsqueeze(-1)
+        noisy_image = sigma * noise + (1.0 - sigma) * gt_latents
+        init_timestep = indices[0]
+        return noisy_image, init_timestep
+
     @cpu_offload("ace_step_transformer")
     @torch.no_grad()
     def text2music_diffusion_process(
@@ -879,6 +901,9 @@ class ACEStepPipeline:
         repaint_start=0,
         repaint_end=0,
         src_latents=None,
+        audio2audio_enable=False,
+        ref_audio_strength=0.5,
+        ref_latents=None,
     ):
 
         logger.info(
@@ -924,6 +949,9 @@ class ACEStepPipeline:
         frame_length = int(duration * 44100 / 512 / 8)
         if src_latents is not None:
             frame_length = src_latents.shape[-1]
+        
+        if ref_latents is not None:
+            frame_length = ref_latents.shape[-1]
 
         if len(oss_steps) > 0:
             infer_steps = max(oss_steps)
@@ -965,6 +993,7 @@ class ACEStepPipeline:
 
         is_repaint = False
         is_extend = False
+
         if add_retake_noise:
             n_min = int(infer_steps * (1 - retake_variance))
             retake_variance = (
@@ -1081,6 +1110,10 @@ class ACEStepPipeline:
                 ), f"{target_latents.shape=} {x0.shape=}"
                 zt_edit = x0.clone()
                 z0 = target_latents
+
+        init_timestep = 1000
+        if audio2audio_enable and ref_latents is not None:
+            target_latents, init_timestep = self.add_latents_noise(gt_latents=ref_latents, variance=(1-ref_audio_strength), noise=target_latents, scheduler=scheduler)
 
         attention_mask = torch.ones(bsz, frame_length, device=device, dtype=dtype)
 
@@ -1203,6 +1236,8 @@ class ACEStepPipeline:
             return sample
 
         for i, t in tqdm(enumerate(timesteps), total=num_inference_steps):
+            if t > init_timestep:
+                continue
 
             if is_repaint:
                 if i < n_min:
@@ -1442,6 +1477,9 @@ class ACEStepPipeline:
         oss_steps: str = None,
         guidance_scale_text: float = 0.0,
         guidance_scale_lyric: float = 0.0,
+        audio2audio_enable: bool = False,
+        ref_audio_strength: float = 0.5,
+        ref_audio_input: str = None,
         retake_seeds: list = None,
         retake_variance: float = 0.5,
         task: str = "text2music",
@@ -1460,6 +1498,9 @@ class ACEStepPipeline:
     ):
 
         start_time = time.time()
+
+        if audio2audio_enable and ref_audio_input is not None:
+            task = "audio2audio"
 
         if not self.loaded:
             logger.warning("Checkpoint not loaded, loading checkpoint...")
@@ -1542,6 +1583,14 @@ class ACEStepPipeline:
                 src_audio_path
             ), f"src_audio_path {src_audio_path} does not exist"
             src_latents = self.infer_latents(src_audio_path)
+        
+        ref_latents = None
+        if ref_audio_input is not None and audio2audio_enable:
+            assert ref_audio_input is not None, "ref_audio_input is required for audio2audio task"
+            assert os.path.exists(
+                ref_audio_input
+            ), f"ref_audio_input {ref_audio_input} does not exist"
+            ref_latents = self.infer_latents(ref_audio_input)
 
         if task == "edit":
             texts = [edit_target_prompt]
@@ -1629,6 +1678,9 @@ class ACEStepPipeline:
                 repaint_start=repaint_start,
                 repaint_end=repaint_end,
                 src_latents=src_latents,
+                audio2audio_enable=audio2audio_enable,
+                ref_audio_strength=ref_audio_strength,
+                ref_latents=ref_latents,
             )
 
         end_time = time.time()
@@ -1681,6 +1733,9 @@ class ACEStepPipeline:
             "src_audio_path": src_audio_path,
             "edit_target_prompt": edit_target_prompt,
             "edit_target_lyrics": edit_target_lyrics,
+            "audio2audio_enable": audio2audio_enable,
+            "ref_audio_strength": ref_audio_strength,
+            "ref_audio_input": ref_audio_input,
         }
         # save input_params_json
         for output_audio_path in output_paths:
