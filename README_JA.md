@@ -1,5 +1,5 @@
 <h1 align="center">ACE-Step</h1>
-<h1 align="center">音楽生成基盤モデルへの一歩</h1>
+<h1 align="center">A Step Towards Music Generation Foundation Model</h1>
 <p align="center">
     <a href="https://ace-step.github.io/">プロジェクト</a> |
     <a href="https://huggingface.co/ACE-Step/ACE-Step-v1-3.5B">Hugging Face</a> |
@@ -12,7 +12,7 @@
   <a href="./README_CN.md"><img alt="简体中文版自述文件" src="https://img.shields.io/badge/简体中文-d9d9d9"></a>
   <a href="./README_JA.md"><img alt="日本語のREADME" src="https://img.shields.io/badge/日本語-d9d9d9"></a>
 </p>
----
+
 <p align="center">
     <img src="./assets/orgnization_logos.png" width="100%" alt="StepFun ロゴ">
 </p>
