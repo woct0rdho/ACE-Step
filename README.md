@@ -31,6 +31,11 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 
 
 ## 📢 News and Updates
+- 📢 **2025.05.09:** Graidio Demo support Audio2Audio. ComfyUI: [Ace_Step_4x_a2a.json](./assets/Ace_Step_4x_a2a.json)
+<p align="center">
+    <img src="assets/audio2audio_demo.gif" alt="Audio2Audio Demo" width="50%">
+    <img src="assets/audio2audio_ComfyUI.png" alt="Audio2Audio ComfyUI" width="40%">
+</p>
 
 - 🚀 **2025.05.08:** [ComfyUI_ACE-Step](https://t.co/GeRSTrIvn0) node is now available! Explore the power of ACE-Step within ComfyUI. 🎉
 ![image](https://github.com/user-attachments/assets/0a13d90a-9086-47ee-abab-976bad20fa7c)
