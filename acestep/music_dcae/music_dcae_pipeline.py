@@ -144,6 +144,7 @@ class MusicDCAE(ModelMixin, ConfigMixin, FromOriginalModelMixin):
     
     @torch.no_grad()
     def decode_overlap(self, latents, audio_lengths=None, sr=None):
+        print("Using Overlapped DCAE and Vocoder Decoding.")
         latents = latents / self.scale_factor + self.shift_factor
 
         pred_wavs = []

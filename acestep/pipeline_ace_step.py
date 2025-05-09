@@ -88,7 +88,6 @@ REPO_ID = "ACE-Step/ACE-Step-v1-3.5B"
 
 # class ACEStepPipeline(DiffusionPipeline):
 class ACEStepPipeline:
-
     def __init__(
         self,
         checkpoint_dir=None,
@@ -97,9 +96,9 @@ class ACEStepPipeline:
         text_encoder_checkpoint_path=None,
         persistent_storage_path=None,
         torch_compile=False,
-        cpu_offload=True,
+        cpu_offload=False,
         quantized=False,
-        overlapped_decode=True,
+        overlapped_decode=False,
         **kwargs,
     ):
         if not checkpoint_dir:
@@ -462,7 +461,6 @@ class ACEStepPipeline:
                 from torchao.quantization import (
                     quantize_,
                     Int4WeightOnlyConfig,
-                    Int8WeightOnlyConfig,
                 )
 
                 group_size = 128
@@ -498,6 +496,7 @@ class ACEStepPipeline:
                     os.path.join(text_encoder_model_path, "pytorch_model_int4wo.bin"),
                 )
 
+
     def load_quantized_checkpoint(self, checkpoint_dir=None):
         device = self.device
 
@@ -505,7 +504,6 @@ class ACEStepPipeline:
         vocoder_model_path = os.path.join(checkpoint_dir, "music_vocoder")
         ace_step_model_path = os.path.join(checkpoint_dir, "ace_step_transformer")
         text_encoder_model_path = os.path.join(checkpoint_dir, "umt5-base")
-
  
 
         dcae_checkpoint_path = dcae_model_path
