@@ -14,7 +14,7 @@ import torchvision.transforms as transforms
 from diffusers.models.modeling_utils import ModelMixin
 from diffusers.loaders import FromOriginalModelMixin
 from diffusers.configuration_utils import ConfigMixin, register_to_config
-
+from tqdm import tqdm
 
 try:
     from .music_vocoder import ADaMoSHiFiGANV1
@@ -119,13 +119,98 @@ class MusicDCAE(ModelMixin, ConfigMixin, FromOriginalModelMixin):
             mels = self.dcae.decoder(latent.unsqueeze(0))
             mels = mels * 0.5 + 0.5
             mels = mels * (self.max_mel_value - self.min_mel_value) + self.min_mel_value
-            wav = self.vocoder.decode(mels[0]).squeeze(1)
+
+            # wav = self.vocoder.decode(mels[0]).squeeze(1)
+            # decode waveform for each channels to reduce vram footprint
+            wav_ch1 = self.vocoder.decode(mels[:,0,:,:]).squeeze(1).cpu()
+            wav_ch2 = self.vocoder.decode(mels[:,1,:,:]).squeeze(1).cpu()
+            wav = torch.cat([wav_ch1, wav_ch2],dim=0)
 
             if sr is not None:
                 resampler = (
                     torchaudio.transforms.Resample(44100, sr)
                 )
-                wav = resampler(wav.cpu().float()).to(latent.device).to(latent.dtype)
+                wav = resampler(wav.cpu().float())
+            else:
+                sr = 44100
+            pred_wavs.append(wav)
+
+        if audio_lengths is not None:
+            pred_wavs = [
+                wav[:, :length].cpu() for wav, length in zip(pred_wavs, audio_lengths)
+            ]
+        return sr, pred_wavs
+    
+    
+    @torch.no_grad()
+    def decode_overlap(self, latents, audio_lengths=None, sr=None):
+        latents = latents / self.scale_factor + self.shift_factor
+
+        pred_wavs = []
+
+        for latent in latents:
+            latent = latent.unsqueeze(0)
+
+            dcae_win_len = 512
+            dcae_mel_win_len = dcae_win_len * 8
+            latent_len = latent.shape[3]
+            
+            mels = []
+            for start in tqdm(range(dcae_win_len//4,latent_len-dcae_win_len//4,dcae_win_len//2),desc="DCAE Decoding"):
+                latent_win = latent[:,:,:,start-dcae_win_len//4:start-dcae_win_len//4+dcae_win_len]
+                mel_win = self.dcae.decoder(latent_win)
+                if start == dcae_win_len//4:
+                    mel_win = mel_win[:,:,:,:-dcae_mel_win_len//4]
+                elif start+dcae_win_len//2>latent_len:
+                    mel_win = mel_win[:,:,:,dcae_mel_win_len//4:]
+                else:
+                    mel_win = mel_win[:,:,:,dcae_mel_win_len//4:-dcae_mel_win_len//4]
+                mels.append(mel_win)
+            mels = torch.cat(mels,dim=3)
+
+            mels = mels * 0.5 + 0.5
+            mels = mels * (self.max_mel_value - self.min_mel_value) + self.min_mel_value
+            
+            # wav_ch1 = self.vocoder.decode(mels[:,0,:,:]).squeeze(1)
+            # wav_ch2 = self.vocoder.decode(mels[:,1,:,:]).squeeze(1)
+            # wav = torch.cat([wav_ch1, wav_ch2],dim=0)
+
+            vocoder_win_len = 512 * 512
+            vocoder_overlap_len = 1024
+            vocoder_hop_len = vocoder_win_len - 2*vocoder_overlap_len
+            mel_len = mels.shape[3]
+            mel_hop_len = 512
+                    
+            crossfade_len = 128
+            crossfade_win_tail = torch.linspace(1, 0, crossfade_len).unsqueeze(0).unsqueeze(1)
+            crossfade_win_head = torch.linspace(0, 1, crossfade_len).unsqueeze(0).unsqueeze(1)
+
+            with tqdm(total=int(1+mel_len*mel_hop_len/vocoder_hop_len),desc="Vocoder Decoding") as pbar:
+                wav = self.vocoder.decode(mels[0, :, :, :vocoder_win_len//mel_hop_len]).cpu()
+                wav = wav[:,:,:-vocoder_overlap_len]
+                p = vocoder_hop_len
+                pbar.update(1)
+
+                while p < mel_len * mel_hop_len:
+                    wav_win = self.vocoder.decode(mels[0, :, :, p//mel_hop_len:p//mel_hop_len+vocoder_win_len//mel_hop_len]).cpu()
+
+                    wav[:,:,-crossfade_len:] = wav[:,:,-crossfade_len:] * crossfade_win_tail + wav_win[:,:,vocoder_overlap_len-crossfade_len:vocoder_overlap_len] * crossfade_win_head
+                    if p + vocoder_hop_len < mel_len * mel_hop_len:
+                        wav_win = wav_win[:,:,vocoder_overlap_len:-vocoder_overlap_len]
+                    else:
+                        wav_win = wav_win[:,:,vocoder_overlap_len:]
+                    wav = torch.cat([wav,wav_win],axis=2)
+                    p+=vocoder_hop_len
+                    pbar.update(1)
+
+            wav = wav.squeeze(1)
+
+
+            if sr is not None:
+                resampler = (
+                    torchaudio.transforms.Resample(44100, sr)
+                )
+                wav = resampler(wav.cpu().float())
             else:
                 sr = 44100
             pred_wavs.append(wav)

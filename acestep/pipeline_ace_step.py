@@ -98,7 +98,8 @@ class ACEStepPipeline:
         persistent_storage_path=None,
         torch_compile=False,
         cpu_offload=True,
-        quantized=True,
+        quantized=False,
+        overlapped_decode=True,
         **kwargs,
     ):
         if not checkpoint_dir:
@@ -129,6 +130,7 @@ class ACEStepPipeline:
         self.torch_compile = torch_compile
         self.cpu_offload = cpu_offload
         self.quantized = quantized
+        self.overlapped_decode = overlapped_decode
 
     def load_checkpoint(self, checkpoint_dir=None, export_quantized_weights=False):
         device = self.device
@@ -1616,7 +1618,10 @@ class ACEStepPipeline:
         audio_lengths = [target_wav_duration_second * sample_rate] * bs
         pred_latents = latents
         with torch.no_grad():
-            _, pred_wavs = self.music_dcae.decode(pred_latents, sr=sample_rate)
+            if self.overlapped_decode:
+                _, pred_wavs = self.music_dcae.decode_overlap(pred_latents, sr=sample_rate)
+            else:
+                _, pred_wavs = self.music_dcae.decode(pred_latents, sr=sample_rate)
         pred_wavs = [pred_wav.cpu().float() for pred_wav in pred_wavs]
         for i in tqdm(range(bs)):
             output_audio_path = self.save_wav_file(
