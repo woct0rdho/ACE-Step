@@ -347,6 +347,43 @@ Example dataset entry:
 	}
 }
 ```
+How to get an audio's reception? 
+
+You can use `Qwen-Omini` https://chat.qwen.ai/ to describe an audio.
+
+Here we share the prompt we used.
+
+```python
+sys_prompt_without_tag = """Analyze the input audio and generate 6 description variants. Each variant must be <200 characters. Follow these exact definitions:
+
+1.  `simplified`: Use only one most representative tag from the valid set.
+2.  `expanded`: Broaden valid tags to include related sub-genres/techniques.
+3.  `descriptive`: Convert tags into a sensory-rich sentence based *only on the sound*. DO NOT transcribe or reference the lyrics.
+4.  `synonyms`: Replace tags with equivalent terms (e.g., 'strings' → 'orchestral').
+5.  `use_cases`: Suggest practical applications based on audio characteristics.
+6.  `analysis`: Analyze the audio's genre, instruments, tempo, and mood **based strictly on the audible musical elements**. Technical breakdown in specified format.
+    *   For the `instruments` list: **Only include instruments that are actually heard playing in the audio recording.** **Explicitly ignore any instruments merely mentioned or sung about in the lyrics.** Cover all audibly present instruments.
+7. `lyrical_rap_check`: if the audio is lyrical rap
+**Strictly ignore any information derived solely from the lyrics when performing the analysis, especially for identifying instruments.**
+
+**Output Format:**
+```json
+{
+  "simplified": <str>,
+  "expanded": <str>,
+  "descriptive": <str>,
+  "synonyms": <str>,
+  "use_cases": <str>,
+  "analysis": {
+    "genre": <str list>,
+    "instruments": <str list>,
+    "tempo": <str>,
+    "mood": <str list>
+  },
+  "lyrical_rap_check": <bool>
+}
+"""
+```
 
 ### Training Parameters
 
