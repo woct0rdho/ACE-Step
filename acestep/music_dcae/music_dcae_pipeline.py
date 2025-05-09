@@ -124,10 +124,8 @@ class MusicDCAE(ModelMixin, ConfigMixin, FromOriginalModelMixin):
             if sr is not None:
                 resampler = (
                     torchaudio.transforms.Resample(44100, sr)
-                    .to(latents.device)
-                    .to(latents.dtype)
                 )
-                wav = resampler(wav)
+                wav = resampler(wav.cpu().float()).to(latent.device).to(latent.dtype)
             else:
                 sr = 44100
             pred_wavs.append(wav)
