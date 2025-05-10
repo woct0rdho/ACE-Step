@@ -61,6 +61,8 @@ class MusicDCAE(ModelMixin, ConfigMixin, FromOriginalModelMixin):
 
     def load_audio(self, audio_path):
         audio, sr = torchaudio.load(audio_path)
+        if audio.shape[0] == 1:
+            audio = audio.repeat(2, 1)
         return audio, sr
 
     def forward_mel(self, audios):
