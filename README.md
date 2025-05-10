@@ -35,6 +35,8 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 
 
 ## 📢 News and Updates
+- 🔥 **2025.05.10:** Reduce Max VLLM to 8gb, better for comsumer device. use option `--torch_compile true --cpu_offload true --overlapped_decode true`
+
 - 📢 **2025.05.09:** Graidio Demo support Audio2Audio. ComfyUI: [Ace_Step_4x_a2a.json](./assets/Ace_Step_4x_a2a.json)
 <p align="center">
     <img src="assets/audio2audio_demo.gif" alt="Audio2Audio Demo" width="50%">
@@ -269,6 +271,8 @@ If you intend to integrate ACE-Step as a library into your own Python projects, 
 - `--share`: Enable Gradio sharing link (default: False)
 - `--bf16`: Use bfloat16 precision for faster inference (default: True)
 - `--torch_compile`: Use `torch.compile()` to optimize the model, speeding up inference (default: False). **Not Supported on Windows**
+- `--cpu_offload`: Offload model weights to CPU to save GPU memory (default: False)
+- `--overlapped_decode`: Use overlapped decoding to speed up inference (default: False)
 
 ## 📱 User Interface Guide
 
