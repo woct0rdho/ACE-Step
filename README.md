@@ -35,7 +35,14 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 
 
 ## 📢 News and Updates
-- 🔥 **2025.05.10:** Reduce Max VLLM to 8gb, better for comsumer device. use option `--torch_compile true --cpu_offload true --overlapped_decode true`
+- 🔥 **2025.05.10:** Memory Optimization Update
+  - Reduced Max VLLM to 8GB, making it more compatible with consumer devices
+  - Recommended launch options:
+    ```bash
+    acestep --torch_compile true --cpu_offload true --overlapped_decode true
+    ```
+
+![image](./assets/cpu_offload_performance.png)
 
 - 📢 **2025.05.09:** Graidio Demo support Audio2Audio. ComfyUI: [Ace_Step_4x_a2a.json](./assets/Ace_Step_4x_a2a.json)
 <p align="center">
