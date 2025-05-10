@@ -46,7 +46,13 @@ from acestep.data_sampler import DataSampler
 @click.option(
     "--torch_compile", type=click.BOOL, default=False, help="Whether to use torch.compile."
 )
-def main(checkpoint_path, server_name, port, device_id, share, bf16, torch_compile):
+@click.option(
+    "--cpu_offload", type=bool, default=False, help="Whether to use CPU offloading (only load current stage's model to GPU)"
+)
+@click.option(
+    "--overlapped_decode", type=bool, default=False, help="Whether to use overlapped decoding (run dcae and vocoder using sliding windows)"
+)
+def main(checkpoint_path, server_name, port, device_id, share, bf16, torch_compile, cpu_offload, overlapped_decode):
     """
     Main function to launch the ACE Step pipeline demo.
     """
@@ -57,6 +63,8 @@ def main(checkpoint_path, server_name, port, device_id, share, bf16, torch_compi
         checkpoint_dir=checkpoint_path,
         dtype="bfloat16" if bf16 else "float32",
         torch_compile=torch_compile,
+        cpu_offload=cpu_offload,
+        overlapped_decode=overlapped_decode
     )
     data_sampler = DataSampler()
 
