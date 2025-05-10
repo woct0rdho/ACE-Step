@@ -36,7 +36,7 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 
 ## 📢 News and Updates
 - 🔥 **2025.05.10:** Memory Optimization Update
-  - Reduced Max VLLM to 8GB, making it more compatible with consumer devices
+  - Reduced Max VRAM to 8GB, making it more compatible with consumer devices
   - Recommended launch options:
     ```bash
     acestep --torch_compile true --cpu_offload true --overlapped_decode true
