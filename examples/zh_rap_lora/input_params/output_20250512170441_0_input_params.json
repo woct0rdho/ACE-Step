@@ -1,0 +1,45 @@
+{
+    "lora_name_or_path": "/root/sag_train/data/ace_step_v1_chinese_rap_lora_80k",
+    "task": "text2music",
+    "prompt": "Rap, adult, male, spoken word, rapping, clear, warm, articulate, Lo-Fi Hip Hop, 100-120 BPM, Keyboard Chords, Male Rap, Lazy Rhythm, Melancholy, Rap",
+    "lyrics": "[Intro]\n夜色很淡 像褪色的照片\n但记忆却像刀锋一样锐利\n\n[Verse 1]\n你说过的甜言蜜语 现在听来像最恶毒的咒骂\n你刺进我心里的刀 现在还在滴血未干哪\n慵懒的旋律像我的脚步 拖着沉重的躯壳\n脑海里循环播放那画面 快把我逼疯了\n键盘和弦 低沉又忧伤 弹奏着我的绝望\n我曾经的信任 像玻璃一样 被你狠狠地摔在地上\n不想振作 不想原谅 只想让这一切都停止\n可心底有个声音嘶吼着 要你付出该有的代价\n\n[Chorus]\n背叛像毒药 渗透我的血液\n复仇的火焰 在我眼中燃起\n哪怕遍体鳞伤 哪怕万劫不复\n我也要亲手 撕碎你的幸福\n这是我的哀歌 也是我的战书\n键盘的音符 每一下都带着恨意 和痛苦\n\n[Verse 2]\n曾经的兄弟 现在面目全非 像个陌生人\n你的自私像癌细胞 一点点吞噬我的纯真\n我学着你的样子 把心锁起来 不再轻易相信\n让懒散的节奏包裹我 给自己一点喘息\n键盘的音色变得更加阴冷 像秋天的雨滴\n冲刷掉所有温情 只剩下彻骨的寒意\n我不会大喊大叫 只是默默地计划\n每一步 都走向 让你后悔的那一刹那\n\n[Chorus]\n背叛像毒药 渗透我的血液\n复仇的火焰 在我眼中燃起\n哪怕遍体鳞伤 哪怕万劫不复\n我也要亲手 撕碎你的幸福\n这是我的哀歌 也是我的战书\n键盘的音符 每一下都带着恨意 和痛苦\n\n[Bridge]\n也许复仇不能带来平静\n也许只会让我更堕落\n但如果不这样做\n我连活下去的勇气都没有\n\n[Outro]\n复仇 复仇 复仇\n直到最后一刻\n懒散地 复仇着",
+    "audio_duration": 202.64,
+    "infer_step": 60,
+    "guidance_scale": 15,
+    "scheduler_type": "euler",
+    "cfg_type": "apg",
+    "omega_scale": 10,
+    "guidance_interval": 0.5,
+    "guidance_interval_decay": 0,
+    "min_guidance_scale": 3,
+    "use_erg_tag": true,
+    "use_erg_lyric": false,
+    "use_erg_diffusion": true,
+    "oss_steps": [],
+    "timecosts": {
+        "preprocess": 0.0335996150970459,
+        "diffusion": 20.01337170600891,
+        "latent2audio": 1.874335527420044
+    },
+    "actual_seeds": [
+        2169985740
+    ],
+    "retake_seeds": [
+        3186498262
+    ],
+    "retake_variance": 0.5,
+    "guidance_scale_text": 0,
+    "guidance_scale_lyric": 0,
+    "repaint_start": 0,
+    "repaint_end": 0,
+    "edit_n_min": 0.0,
+    "edit_n_max": 1.0,
+    "edit_n_avg": 1,
+    "src_audio_path": null,
+    "edit_target_prompt": null,
+    "edit_target_lyrics": null,
+    "audio2audio_enable": false,
+    "ref_audio_strength": 0.5,
+    "ref_audio_input": null,
+    "audio_path": "./outputs/output_20250512170441_0.wav"
+}

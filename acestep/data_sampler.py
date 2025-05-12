@@ -11,6 +11,7 @@ class DataSampler:
         self.root_dir = root_dir
         self.input_params_files = list(Path(self.root_dir).glob("*.json"))
         self.zh_rap_lora_input_params_files = list(Path(ZH_RAP_LORA_ROOT_DIR).glob("*.json"))
+        self.zh_rap_lora_input_params_files += list(Path(ZH_RAP_LORA_ROOT_DIR).glob("*.json"))
 
     def load_json(self, file_path):
         with open(file_path, "r", encoding="utf-8") as f:
