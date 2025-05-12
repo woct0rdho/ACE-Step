@@ -134,10 +134,29 @@ class ACEStepPipeline:
 
     def load_checkpoint(self, checkpoint_dir=None, export_quantized_weights=False):
         device = self.device
-        if checkpoint_dir is None:
-            checkpoint_dir_models = snapshot_download(REPO_ID)
-        else:
-            checkpoint_dir_models = snapshot_download(REPO_ID, cache_dir=checkpoint_dir)
+        checkpoint_dir_models = None
+        
+        if checkpoint_dir is not None:
+            required_dirs = ["music_dcae_f8c8", "music_vocoder", "ace_step_transformer", "umt5-base"]
+            all_dirs_exist = True
+            for dir_name in required_dirs:
+                dir_path = os.path.join(checkpoint_dir, dir_name)
+                if not os.path.exists(dir_path):
+                    all_dirs_exist = False
+                    break
+            
+            if all_dirs_exist:
+                logger.info(f"Load models from: {checkpoint_dir}")
+                checkpoint_dir_models = checkpoint_dir
+        
+        if checkpoint_dir_models is None:
+            if checkpoint_dir is None:
+                logger.info(f"Download models from Hugging Face: {REPO_ID}")
+                checkpoint_dir_models = snapshot_download(REPO_ID)
+            else:
+                logger.info(f"Download models from Hugging Face: {REPO_ID}, cache to: {checkpoint_dir}")
+                checkpoint_dir_models = snapshot_download(REPO_ID, cache_dir=checkpoint_dir)
+
         dcae_model_path = os.path.join(checkpoint_dir_models, "music_dcae_f8c8")
         vocoder_model_path = os.path.join(checkpoint_dir_models, "music_vocoder")
         ace_step_model_path = os.path.join(checkpoint_dir_models, "ace_step_transformer")
