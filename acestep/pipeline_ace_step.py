@@ -1545,6 +1545,19 @@ class ACEStepPipeline:
         input_audio = input_audio.to(device=device, dtype=dtype)
         latents, _ = self.music_dcae.encode(input_audio, sr=sr)
         return latents
+    
+    def load_lora(self, lora_name_or_path):
+        if lora_name_or_path != "none":
+            if not os.path.exists(lora_name_or_path):
+                lora_download_path = snapshot_download(lora_name_or_path, cache_dir=self.checkpoint_dir)
+            else:
+                lora_download_path = lora_name_or_path
+            self.ace_step_transformer.load_lora_adapter(os.path.join(lora_download_path, "pytorch_lora_weights.safetensors"), adapter_name="zh_rap_lora", with_alpha=True)
+            logger.info(f"Loading lora weights from: {lora_name_or_path} download path is: {lora_download_path}")
+            self.lora_path = lora_name_or_path
+        elif self.lora_path != "none" and lora_name_or_path == "none":
+            logger.info("No lora weights to load.")
+            self.ace_step_transformer.unload_lora_weights()
 
     def __call__(
         self,
@@ -1598,15 +1611,7 @@ class ACEStepPipeline:
                 self.load_quantized_checkpoint(self.checkpoint_dir)
             else:
                 self.load_checkpoint(self.checkpoint_dir)
-            # lora_path=lora_name_or_path
-            if lora_name_or_path != "none":
-                self.ace_step_transformer.load_lora_adapter(os.path.join(lora_name_or_path, "pytorch_lora_weights.safetensors"), adapter_name="zh_rap_lora", with_alpha=True)
-                logger.info(f"Loading lora weights from: {lora_name_or_path}")
-                self.lora_path = lora_name_or_path
-            elif self.lora_path != "none" and lora_name_or_path == "none":
-                logger.info("No lora weights to load.")
-                self.ace_step_transformer.unload_lora_weights()
-
+            self.load_lora(lora_name_or_path)
             load_model_cost = time.time() - start_time
             logger.info(f"Model loaded in {load_model_cost:.2f} seconds.")
 

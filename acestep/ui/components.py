@@ -93,6 +93,7 @@ def create_text2music_ui(
                     label="Lora Name or Path",
                     choices=["ACE-Step/ACE-Step-v1-chinese-rap-LoRA", "none"],
                     value="none",
+                    allow_custom_value=True,
                 )
 
             ref_audio_input = gr.Audio(type="filepath", label="Reference Audio (for Audio2Audio)", visible=False, elem_id="ref_audio_input", show_download_button=True)
@@ -773,8 +774,8 @@ def create_text2music_ui(
                     outputs=extend_outputs + [extend_input_params_json],
                 )
 
-        def sample_data():
-            json_data = sample_data_func()
+        def sample_data(lora_name_or_path_):
+            json_data = sample_data_func(lora_name_or_path_)
             return (
                 json_data["audio_duration"],
                 json_data["prompt"],
@@ -817,11 +818,6 @@ def create_text2music_ui(
                     if "ref_audio_input" in json_data
                     else None
                 ),
-                (
-                    json_data["lora_name_or_path"]
-                    if "lora_name_or_path" in json_data
-                    else "none"
-                )
             )
 
         sample_bnt.click(
