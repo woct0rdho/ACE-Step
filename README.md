@@ -30,6 +30,16 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 
 
 ## 📢 News and Updates
+- 🎤 2025.05.12: Release `RapMachine` and fix lora training issues
+    - See [ZH_RAP_LORA.md](./ZH_RAP_LORA.md) for details.
+    - See [TRAIN_INSTRUCTION.md](./TRAIN_INSTRUCTION.md) for detailed training instructions.
+
+<p align="center">
+    <img src="assets/rap_machine_demo.gif" alt="RapMachine Demo" width="45%">
+    <img src="assets/train_demo.gif" alt="Train Demo" width="50%">
+</p>
+
+
 - 🔥 **2025.05.10:** Memory Optimization Update
   - Reduced Max VRAM to 8GB, making it more compatible with consumer devices
   - Recommended launch options:
@@ -141,7 +151,8 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 
 - [x] Release training code 🔥
 - [x] Release LoRA training code 🔥
-- [ ] Release RapMachine LoRA 🎤
+- [x] Release RapMachine LoRA 🎤
+- [ ] Train and Release ACE-Step V1.5
 - [ ] Release ControlNet training code 🔥
 - [ ] Release Singing2Accompaniment ControlNet 🎮
 - [ ] Release evaluation performance and technical report 📄
