@@ -203,3 +203,4 @@ data_sampler_demo.py
 pipeline_ace_step_demo.py
 *.wav
 start.sh
+exps/*
