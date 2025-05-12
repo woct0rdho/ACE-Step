@@ -1547,7 +1547,7 @@ class ACEStepPipeline:
         return latents
     
     def load_lora(self, lora_name_or_path):
-        if lora_name_or_path != "none":
+        if lora_name_or_path != "none" and self.lora_path == "none":
             if not os.path.exists(lora_name_or_path):
                 lora_download_path = snapshot_download(lora_name_or_path, cache_dir=self.checkpoint_dir)
             else:
@@ -1611,9 +1611,10 @@ class ACEStepPipeline:
                 self.load_quantized_checkpoint(self.checkpoint_dir)
             else:
                 self.load_checkpoint(self.checkpoint_dir)
-            self.load_lora(lora_name_or_path)
-            load_model_cost = time.time() - start_time
-            logger.info(f"Model loaded in {load_model_cost:.2f} seconds.")
+        
+        self.load_lora(lora_name_or_path)
+        load_model_cost = time.time() - start_time
+        logger.info(f"Model loaded in {load_model_cost:.2f} seconds.")
 
         start_time = time.time()
 
@@ -1810,6 +1811,7 @@ class ACEStepPipeline:
         }
 
         input_params_json = {
+            "lora_name_or_path": lora_name_or_path,
             "task": task,
             "prompt": prompt if task != "edit" else edit_target_prompt,
             "lyrics": lyrics if task != "edit" else edit_target_lyrics,

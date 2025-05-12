@@ -140,7 +140,7 @@ def create_text2music_ui(
                     minimum=1,
                     maximum=1000,
                     step=1,
-                    value=27,
+                    value=60,
                     label="Infer Steps",
                     interactive=True,
                 )
@@ -200,7 +200,7 @@ def create_text2music_ui(
                 )
                 use_erg_lyric = gr.Checkbox(
                     label="use ERG for lyric",
-                    value=True,
+                    value=False,
                     info="The same but apply to lyric encoder's attention.",
                 )
                 use_erg_diffusion = gr.Checkbox(
@@ -298,7 +298,7 @@ def create_text2music_ui(
                         retake_seeds=retake_seeds,
                         retake_variance=retake_variance,
                         task="retake",
-                        lora_name_or_path=lora_name_or_path,
+                        lora_name_or_path="none" if "lora_name_or_path" not in json_data else json_data["lora_name_or_path"]
                     )
 
                 retake_bnt.click(
@@ -421,7 +421,7 @@ def create_text2music_ui(
                         repaint_start=repaint_start,
                         repaint_end=repaint_end,
                         src_audio_path=src_audio_path,
-                        lora_name_or_path=lora_name_or_path,
+                        lora_name_or_path="none" if "lora_name_or_path" not in json_data else json_data["lora_name_or_path"]
                     )
 
                 repaint_bnt.click(
@@ -595,7 +595,7 @@ def create_text2music_ui(
                         edit_n_min=edit_n_min,
                         edit_n_max=edit_n_max,
                         retake_seeds=retake_seeds,
-                        lora_name_or_path=lora_name_or_path,
+                        lora_name_or_path="none" if "lora_name_or_path" not in json_data else json_data["lora_name_or_path"]
                     )
 
                 edit_bnt.click(
@@ -740,7 +740,7 @@ def create_text2music_ui(
                         repaint_start=repaint_start,
                         repaint_end=repaint_end,
                         src_audio_path=src_audio_path,
-                        lora_name_or_path=lora_name_or_path,
+                        lora_name_or_path="none" if "lora_name_or_path" not in json_data else json_data["lora_name_or_path"]
                     )
 
                 extend_bnt.click(
