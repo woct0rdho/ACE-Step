@@ -38,6 +38,7 @@ RUN git clone https://github.com/ace-step/ACE-Step.git .
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir hf_transfer peft && \
     pip3 install --no-cache-dir -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu126
+RUN pip3 install --no-cache-dir .
 
 # Change ownership of app files to appuser
 RUN chown -R appuser:appuser /app
