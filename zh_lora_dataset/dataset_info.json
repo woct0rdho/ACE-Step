@@ -1,0 +1,32 @@
+{
+  "citation": "",
+  "description": "",
+  "features": {
+    "keys": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "filename": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "tags": {
+      "feature": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    },
+    "speaker_emb_path": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "norm_lyrics": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "recaption": {}
+  },
+  "homepage": "",
+  "license": ""
+}

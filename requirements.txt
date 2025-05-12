@@ -22,3 +22,5 @@ cutlet
 fugashi[unidic-lite]
 click
 peft
+tensorboard
+tensorboardX
