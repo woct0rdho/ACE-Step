@@ -87,7 +87,14 @@ def create_text2music_ui(
                 sample_bnt = gr.Button("Sample", variant="primary", scale=1)
 
             # audio2audio
-            audio2audio_enable = gr.Checkbox(label="Enable Audio2Audio", value=False, info="Check to enable Audio-to-Audio generation using a reference audio.", elem_id="audio2audio_checkbox")
+            with gr.Row(equal_height=True):
+                audio2audio_enable = gr.Checkbox(label="Enable Audio2Audio", value=False, info="Check to enable Audio-to-Audio generation using a reference audio.", elem_id="audio2audio_checkbox")
+                lora_name_or_path = gr.Dropdown(
+                    label="Lora Name or Path",
+                    choices=["ACE-Step/ACE-Step-v1-chinese-rap-LoRA", "none"],
+                    value="none",
+                )
+
             ref_audio_input = gr.Audio(type="filepath", label="Reference Audio (for Audio2Audio)", visible=False, elem_id="ref_audio_input", show_download_button=True)
             ref_audio_strength = gr.Slider(
                 label="Refer audio strength",
@@ -290,6 +297,7 @@ def create_text2music_ui(
                         retake_seeds=retake_seeds,
                         retake_variance=retake_variance,
                         task="retake",
+                        lora_name_or_path=lora_name_or_path,
                     )
 
                 retake_bnt.click(
@@ -412,6 +420,7 @@ def create_text2music_ui(
                         repaint_start=repaint_start,
                         repaint_end=repaint_end,
                         src_audio_path=src_audio_path,
+                        lora_name_or_path=lora_name_or_path,
                     )
 
                 repaint_bnt.click(
@@ -585,6 +594,7 @@ def create_text2music_ui(
                         edit_n_min=edit_n_min,
                         edit_n_max=edit_n_max,
                         retake_seeds=retake_seeds,
+                        lora_name_or_path=lora_name_or_path,
                     )
 
                 edit_bnt.click(
@@ -729,6 +739,7 @@ def create_text2music_ui(
                         repaint_start=repaint_start,
                         repaint_end=repaint_end,
                         src_audio_path=src_audio_path,
+                        lora_name_or_path=lora_name_or_path,
                     )
 
                 extend_bnt.click(
@@ -806,10 +817,16 @@ def create_text2music_ui(
                     if "ref_audio_input" in json_data
                     else None
                 ),
+                (
+                    json_data["lora_name_or_path"]
+                    if "lora_name_or_path" in json_data
+                    else "none"
+                )
             )
 
         sample_bnt.click(
             sample_data,
+            inputs=[lora_name_or_path],
             outputs=[
                 audio_duration,
                 prompt,
@@ -859,6 +876,7 @@ def create_text2music_ui(
             audio2audio_enable,
             ref_audio_strength,
             ref_audio_input,
+            lora_name_or_path,
         ],
         outputs=outputs + [input_params_json],
     )

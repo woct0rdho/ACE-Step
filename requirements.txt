@@ -21,3 +21,4 @@ accelerate==1.6.0
 cutlet
 fugashi[unidic-lite]
 click
+peft

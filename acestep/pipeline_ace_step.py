@@ -113,6 +113,7 @@ class ACEStepPipeline:
         ensure_directory_exists(checkpoint_dir)
 
         self.checkpoint_dir = checkpoint_dir
+        self.lora_path = "none"
         device = (
             torch.device(f"cuda:{device_id}")
             if torch.cuda.is_available()
@@ -1568,6 +1569,7 @@ class ACEStepPipeline:
         audio2audio_enable: bool = False,
         ref_audio_strength: float = 0.5,
         ref_audio_input: str = None,
+        lora_name_or_path: str = "none",
         retake_seeds: list = None,
         retake_variance: float = 0.5,
         task: str = "text2music",
@@ -1596,6 +1598,15 @@ class ACEStepPipeline:
                 self.load_quantized_checkpoint(self.checkpoint_dir)
             else:
                 self.load_checkpoint(self.checkpoint_dir)
+            # lora_path=lora_name_or_path
+            if lora_name_or_path != "none":
+                self.ace_step_transformer.load_lora_adapter(os.path.join(lora_name_or_path, "pytorch_lora_weights.safetensors"), adapter_name="zh_rap_lora", with_alpha=True)
+                logger.info(f"Loading lora weights from: {lora_name_or_path}")
+                self.lora_path = lora_name_or_path
+            elif self.lora_path != "none" and lora_name_or_path == "none":
+                logger.info("No lora weights to load.")
+                self.ace_step_transformer.unload_lora_weights()
+
             load_model_cost = time.time() - start_time
             logger.info(f"Model loaded in {load_model_cost:.2f} seconds.")
 
