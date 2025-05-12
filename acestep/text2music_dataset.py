@@ -9,8 +9,8 @@ import traceback
 import torchaudio
 from pathlib import Path
 import re
-from language_segmentation import LangSegment
-from models.lyrics_utils.lyric_tokenizer import VoiceBpeTokenizer
+from acestep.language_segmentation import LangSegment
+from acestep.models.lyrics_utils.lyric_tokenizer import VoiceBpeTokenizer
 import warnings
 
 warnings.simplefilter("ignore", category=FutureWarning)
