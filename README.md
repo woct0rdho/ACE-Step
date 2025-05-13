@@ -31,7 +31,7 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 
 ## 📢 News and Updates
 - 🎤 2025.05.12: Release [RapMachine](https://huggingface.co/ACE-Step/ACE-Step-v1-chinese-rap-LoRA) and fix lora training issues
-    - See [ZH_RAP_LORA.md](./ZH_RAP_LORA.md) for details.
+    - See [ZH_RAP_LORA.md](./ZH_RAP_LORA.md) for details. Audio Examples: https://ace-step.github.io/#RapMachine
     - See [TRAIN_INSTRUCTION.md](./TRAIN_INSTRUCTION.md) for detailed training instructions.
 
 <p align="center">
