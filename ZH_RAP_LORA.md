@@ -26,7 +26,13 @@ We meticulously curated and trained this model on Chinese rap/hip-hop datasets, 
 
 ---  
 
-### **Updates & Community Call**  
-We’ve **revamped and expanded** the LoRA training guide with finer details. This release is a **proof of concept**—showcasing the potential of **ACE-Step** as a foundational model for music generation.  
+## Community Note
+We’ve **revamped and expanded** the LoRA training guide with finer details. This release is a **proof of concept**—showcasing the potential of **ACE-Step**.
 
-To the community: **Enjoy it, customize it, and create something entirely new.** We can’t wait to hear what you’ll build!  
+While a Chinese rap LoRA might seem niche for non-Chinese communities, we consistently demonstrate through such projects that ACE-step - as a music generation foundation model - holds boundless potential. It doesn't just improve pronunciation in one language, but spawns new styles. 
+
+The universal human appreciation of music is a precious asset. Like abstract LEGO blocks, these elements will eventually combine in more organic ways. May our open-source contributions propel the evolution of musical history forward.
+
+**Enjoy it, customize it, and create something entirely new.** 
+
+We can’t wait to hear what you’ll build!  

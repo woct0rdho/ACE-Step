@@ -604,6 +604,7 @@ class Pipeline(LightningModule):
         step = self.global_step
         checkpoint_name = f"epoch={epoch}-step={step}_lora"
         checkpoint_dir = os.path.join(log_dir, "checkpoints", checkpoint_name)
+        os.makedirs(checkpoint_dir, exist_ok=True)
         self.transformers.save_lora_adapter(checkpoint_dir, adapter_name=self.adapter_name)
         return state
 
