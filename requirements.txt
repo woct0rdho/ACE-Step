@@ -1,6 +1,6 @@
 datasets==3.4.1
 diffusers==0.32.2
-gradio==5.23.3
+gradio
 librosa==0.11.0
 loguru==0.7.3
 matplotlib==3.10.1
@@ -11,7 +11,7 @@ soundfile==0.13.1
 torch
 torchaudio
 torchvision
-tqdm==4.67.1
+tqdm
 transformers==4.50.0
 py3langid==0.3.0
 hangul-romanize==0.1.0
@@ -21,3 +21,6 @@ accelerate==1.6.0
 cutlet
 fugashi[unidic-lite]
 click
+peft
+tensorboard
+tensorboardX

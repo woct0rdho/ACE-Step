@@ -113,6 +113,7 @@ class ACEStepPipeline:
         ensure_directory_exists(checkpoint_dir)
 
         self.checkpoint_dir = checkpoint_dir
+        self.lora_path = "none"
         device = (
             torch.device(f"cuda:{device_id}")
             if torch.cuda.is_available()
@@ -1563,6 +1564,21 @@ class ACEStepPipeline:
         input_audio = input_audio.to(device=device, dtype=dtype)
         latents, _ = self.music_dcae.encode(input_audio, sr=sr)
         return latents
+    
+    def load_lora(self, lora_name_or_path):
+        if lora_name_or_path != self.lora_path and lora_name_or_path != "none":
+            if not os.path.exists(lora_name_or_path):
+                lora_download_path = snapshot_download(lora_name_or_path, cache_dir=self.checkpoint_dir)
+            else:
+                lora_download_path = lora_name_or_path
+            if self.lora_path != "none":
+                self.ace_step_transformer.unload_lora()
+            self.ace_step_transformer.load_lora_adapter(os.path.join(lora_download_path, "pytorch_lora_weights.safetensors"), adapter_name="zh_rap_lora", with_alpha=True)
+            logger.info(f"Loading lora weights from: {lora_name_or_path} download path is: {lora_download_path}")
+            self.lora_path = lora_name_or_path
+        elif self.lora_path != "none" and lora_name_or_path == "none":
+            logger.info("No lora weights to load.")
+            self.ace_step_transformer.unload_lora()
 
     def __call__(
         self,
@@ -1587,6 +1603,7 @@ class ACEStepPipeline:
         audio2audio_enable: bool = False,
         ref_audio_strength: float = 0.5,
         ref_audio_input: str = None,
+        lora_name_or_path: str = "none",
         retake_seeds: list = None,
         retake_variance: float = 0.5,
         task: str = "text2music",
@@ -1615,8 +1632,10 @@ class ACEStepPipeline:
                 self.load_quantized_checkpoint(self.checkpoint_dir)
             else:
                 self.load_checkpoint(self.checkpoint_dir)
-            load_model_cost = time.time() - start_time
-            logger.info(f"Model loaded in {load_model_cost:.2f} seconds.")
+        
+        self.load_lora(lora_name_or_path)
+        load_model_cost = time.time() - start_time
+        logger.info(f"Model loaded in {load_model_cost:.2f} seconds.")
 
         start_time = time.time()
 
@@ -1813,6 +1832,7 @@ class ACEStepPipeline:
         }
 
         input_params_json = {
+            "lora_name_or_path": lora_name_or_path,
             "task": task,
             "prompt": prompt if task != "edit" else edit_target_prompt,
             "lyrics": lyrics if task != "edit" else edit_target_lyrics,
