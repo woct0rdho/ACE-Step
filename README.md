@@ -250,6 +250,10 @@ acestep --port 7865
 acestep --checkpoint_path /path/to/checkpoint --port 7865 --device_id 0 --share true --bf16 true
 ```
 
+* If `--checkpoint_path` is set and models exist at the path, load from `checkpoint_path`.
+* If `--checkpoint_path` is set but models do not exist at the path, auto download models to `checkpoint_path`.
+* If `--checkpoint_path` is not set, auto download models to the default path `~/.cache/ace-step/checkpoints`.
+
 If you are using macOS, please use `--bf16 false` to avoid errors.
 
 #### 🔍 API Usage
