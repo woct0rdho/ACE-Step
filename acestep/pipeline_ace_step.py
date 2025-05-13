@@ -1533,17 +1533,13 @@ class ACEStepPipeline:
             base_path = f"./outputs"
             ensure_directory_exists(base_path)
             output_path_wav = (
-                f"{base_path}/output_{time.strftime('%Y%m%d%H%M%S')}_{idx}.wav"
+                f"{base_path}/output_{time.strftime('%Y%m%d%H%M%S')}_{idx}."+format
             )
         else:
             ensure_directory_exists(os.path.dirname(save_path))
             if os.path.isdir(save_path):
-                logger.info(
-                    f"Provided save_path '{save_path}' is a directory. Appending timestamped filename."
-                )
-                output_path_wav = os.path.join(
-                    save_path, f"output_{time.strftime('%Y%m%d%H%M%S')}_{idx}.wav"
-                )
+                logger.info(f"Provided save_path '{save_path}' is a directory. Appending timestamped filename.")
+                output_path_wav = os.path.join(save_path, f"output_{time.strftime('%Y%m%d%H%M%S')}_{idx}."+format)
             else:
                 output_path_wav = save_path
 
@@ -1582,6 +1578,7 @@ class ACEStepPipeline:
 
     def __call__(
         self,
+        format: str = "wav",
         audio_duration: float = 60.0,
         prompt: str = None,
         lyrics: str = None,
@@ -1616,7 +1613,6 @@ class ACEStepPipeline:
         edit_n_max: float = 1.0,
         edit_n_avg: int = 1,
         save_path: str = None,
-        format: str = "wav",
         batch_size: int = 1,
         debug: bool = False,
     ):
@@ -1832,6 +1828,7 @@ class ACEStepPipeline:
         }
 
         input_params_json = {
+            "format": format,
             "lora_name_or_path": lora_name_or_path,
             "task": task,
             "prompt": prompt if task != "edit" else edit_target_prompt,
