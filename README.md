@@ -46,6 +46,10 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
     ```bash
     acestep --torch_compile true --cpu_offload true --overlapped_decode true
     ```
+    Windows need to install triton:
+    ```
+    pip install triton-windows
+    ```
 
 ![image](./assets/cpu_offload_performance.png)
 
@@ -287,7 +291,11 @@ If you intend to integrate ACE-Step as a library into your own Python projects, 
 - `--device_id`: GPU device ID to use (default: 0)
 - `--share`: Enable Gradio sharing link (default: False)
 - `--bf16`: Use bfloat16 precision for faster inference (default: True)
-- `--torch_compile`: Use `torch.compile()` to optimize the model, speeding up inference (default: False). **Not Supported on Windows**
+- `--torch_compile`: Use `torch.compile()` to optimize the model, speeding up inference (default: False). 
+  - **Windows need to install triton**:
+    ```
+    pip install triton-windows
+    ```
 - `--cpu_offload`: Offload model weights to CPU to save GPU memory (default: False)
 - `--overlapped_decode`: Use overlapped decoding to speed up inference (default: False)
 
