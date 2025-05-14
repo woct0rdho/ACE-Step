@@ -94,8 +94,13 @@ def create_text2music_ui(
 ):
 
     with gr.Row(equal_height=True):
-        curr_file_dir = os.path.dirname(__file__)
-        output_file_dir = os.path.join(curr_file_dir, "..", "..", "outputs")
+        # curr_file_dir = os.path.dirname(__file__) # Original path logic
+        # output_file_dir = os.path.join(curr_file_dir, "..", "..", "outputs") # Original path logic
+        # Get base output directory from environment variable, defaulting to CWD-relative 'outputs'.
+        # This default (./outputs) is suitable for non-Docker local development.
+        # For Docker, the ACE_OUTPUT_DIR environment variable should be set (e.g., to /app/outputs).
+        _output_base_dir = os.environ.get("ACE_OUTPUT_DIR", "./outputs")
+        output_file_dir = os.path.join(_output_base_dir, "text2music")
         if not os.path.isdir(output_file_dir):
             os.makedirs(output_file_dir, exist_ok=True)
         json_files = [f for f in os.listdir(output_file_dir) if f.endswith('.json')]
