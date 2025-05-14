@@ -2,7 +2,7 @@
 services:
   &name ace-step:
     build:
-      context: .
+      context: https://github.com/ace-step/ACE-Step.git 
       dockerfile: Dockerfile
     container_name: *name
     hostname: *name
