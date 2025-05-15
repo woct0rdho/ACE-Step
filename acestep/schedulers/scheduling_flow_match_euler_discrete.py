@@ -71,9 +71,10 @@ class FlowMatchEulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         max_shift: Optional[float] = 1.15,
         base_image_seq_len: Optional[int] = 256,
         max_image_seq_len: Optional[int] = 4096,
+        sigma_max: Optional[float] = 1.0,
     ):
         timesteps = np.linspace(
-            1, num_train_timesteps, num_train_timesteps, dtype=np.float32
+            1.0, sigma_max*num_train_timesteps, num_train_timesteps, dtype=np.float32
         )[::-1].copy()
         timesteps = torch.from_numpy(timesteps).to(dtype=torch.float32)
 

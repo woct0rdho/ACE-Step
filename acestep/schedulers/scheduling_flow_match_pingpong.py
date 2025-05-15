@@ -71,9 +71,10 @@ class FlowMatchPingPongScheduler(SchedulerMixin, ConfigMixin):
         max_shift: Optional[float] = 1.15,
         base_image_seq_len: Optional[int] = 256,
         max_image_seq_len: Optional[int] = 4096,
+        sigma_max: Optional[float] = 1.0,
     ):
         timesteps = np.linspace(
-            1, num_train_timesteps, num_train_timesteps, dtype=np.float32
+            1, sigma_max*num_train_timesteps, num_train_timesteps, dtype=np.float32
         )[::-1].copy()
         timesteps = torch.from_numpy(timesteps).to(dtype=torch.float32)
 
@@ -324,7 +325,8 @@ class FlowMatchPingPongScheduler(SchedulerMixin, ConfigMixin):
         sigma_next = self.sigmas[self.step_index + 1]
 
         denoised = sample - sigma * model_output
-        prev_sample = (1 - sigma_next) * denoised + sigma_next * torch.randn_like(sample)
+        noise = torch.empty_like(sample).normal_(generator=generator)
+        prev_sample = (1 - sigma_next) * denoised + sigma_next * noise
 
         # Cast sample back to model compatible dtype
         prev_sample = prev_sample.to(model_output.dtype)

@@ -773,6 +773,7 @@ class ACEStepPipeline:
         n_min=0,
         n_max=1.0,
         n_avg=1,
+        scheduler_type="euler",
     ):
 
         do_classifier_free_guidance = True
@@ -900,10 +901,18 @@ class ACEStepPipeline:
                         Vt_tar - Vt_src
                     )  # - (hfg-1)*( x_src))
 
-                # propagate direct ODE
                 zt_edit = zt_edit.to(torch.float32)
-                zt_edit = zt_edit + (t_im1 - t_i) * V_delta_avg
-                zt_edit = zt_edit.to(V_delta_avg.dtype)
+                if scheduler_type != "pingpong":
+                    # propagate direct ODE
+                    zt_edit = zt_edit.to(torch.float32)
+                    zt_edit = zt_edit + (t_im1 - t_i) * V_delta_avg
+                    zt_edit = zt_edit.to(V_delta_avg.dtype)
+                else:
+                    # propagate pingpong SDE
+                    zt_edit_denoised = zt_edit - t_i * V_delta_avg
+                    noise = torch.empty_like(zt_edit).normal_(generator=random_generators[0] if random_generators else None)
+                    prev_sample = (1 - t_im1) * zt_edit_denoised + t_im1 * noise
+
             else:  # i >= T_steps-n_min # regular sampling for last n_min steps
                 if i == n_max:
                     fwd_noise = randn_tensor(
@@ -941,9 +950,15 @@ class ACEStepPipeline:
 
                 dtype = Vt_tar.dtype
                 xt_tar = xt_tar.to(torch.float32)
-                prev_sample = xt_tar + (t_im1 - t_i) * Vt_tar
-                prev_sample = prev_sample.to(dtype)
-                xt_tar = prev_sample
+                if scheduler_type != "pingpong":
+                    prev_sample = xt_tar + (t_im1 - t_i) * Vt_tar
+                    prev_sample = prev_sample.to(dtype)
+                    xt_tar = prev_sample
+                else:
+                    prev_sample = xt_tar - t_i * Vt_tar
+                    noise = torch.empty_like(zt_edit).normal_(generator=random_generators[0] if random_generators else None)
+                    prev_sample = (1 - t_im1) * prev_sample + t_im1 * noise
+                    xt_tar = prev_sample
 
         target_latents = zt_edit if xt_tar is None else xt_tar
         return target_latents
@@ -951,23 +966,43 @@ class ACEStepPipeline:
     def add_latents_noise(
         self,
         gt_latents,
-        variance,
+        sigma_max,
         noise,
-        scheduler,
+        scheduler_type,
+        infer_steps,
     ):
 
         bsz = gt_latents.shape[0]
-        u = torch.tensor([variance] * bsz, dtype=gt_latents.dtype)
-        indices = (u * scheduler.config.num_train_timesteps).long()
-        timesteps = scheduler.timesteps.unsqueeze(1).to(gt_latents.dtype)
-        indices = indices.to(timesteps.device).to(gt_latents.dtype).unsqueeze(1)
-        nearest_idx = torch.argmin(torch.cdist(indices, timesteps), dim=1)
-        sigma = scheduler.sigmas[nearest_idx].flatten().to(gt_latents.device).to(gt_latents.dtype)
-        while len(sigma.shape) < gt_latents.ndim:
-            sigma = sigma.unsqueeze(-1)
-        noisy_image = sigma * noise + (1.0 - sigma) * gt_latents
-        init_timestep = indices[0]
-        return noisy_image, init_timestep
+        device = gt_latents.device
+        noisy_image = gt_latents * (1 - sigma_max) + noise * sigma_max
+        if scheduler_type == "euler":
+            scheduler = FlowMatchEulerDiscreteScheduler(
+                num_train_timesteps=1000,
+                shift=3.0,
+                sigma_max=sigma_max,
+            )
+        elif scheduler_type == "heun":
+            scheduler = FlowMatchHeunDiscreteScheduler(
+                num_train_timesteps=1000,
+                shift=3.0,
+                sigma_max=sigma_max,
+            )
+        elif scheduler_type == "pingpong":
+            scheduler = FlowMatchPingPongScheduler(
+                num_train_timesteps=1000,
+                shift=3.0,
+                sigma_max=sigma_max
+            )
+
+        infer_steps = int(sigma_max * infer_steps)
+        timesteps, num_inference_steps = retrieve_timesteps(
+            scheduler,
+            num_inference_steps=infer_steps,
+            device=device,
+            timesteps=None,
+        )
+        logger.info(f"{scheduler.sigma_min=} {scheduler.sigma_max=} {timesteps=} {num_inference_steps=}")
+        return noisy_image, timesteps, scheduler, num_inference_steps
 
     @cpu_offload("ace_step_transformer")
     @torch.no_grad()
@@ -1217,9 +1252,17 @@ class ACEStepPipeline:
                 zt_edit = x0.clone()
                 z0 = target_latents
 
-        init_timestep = 1000
         if audio2audio_enable and ref_latents is not None:
-            target_latents, init_timestep = self.add_latents_noise(gt_latents=ref_latents, variance=(1-ref_audio_strength), noise=target_latents, scheduler=scheduler)
+            logger.info(
+                f"audio2audio_enable: {audio2audio_enable}, ref_latents: {ref_latents.shape}"
+            )
+            target_latents, timesteps, scheduler, num_inference_steps = self.add_latents_noise(
+                gt_latents=ref_latents,
+                sigma_max=(1-ref_audio_strength),
+                noise=target_latents,
+                scheduler_type=scheduler_type,
+                infer_steps=infer_steps,
+            )
 
         attention_mask = torch.ones(bsz, frame_length, device=device, dtype=dtype)
 
@@ -1342,8 +1385,6 @@ class ACEStepPipeline:
             return sample
 
         for i, t in tqdm(enumerate(timesteps), total=num_inference_steps):
-            if t > init_timestep:
-                continue
 
             if is_repaint:
                 if i < n_min:
@@ -1491,6 +1532,7 @@ class ACEStepPipeline:
                     sample=target_latents,
                     return_dict=False,
                     omega=omega_scale,
+                    generator=random_generators[0],
                 )[0]
 
         if is_extend:
@@ -1781,6 +1823,7 @@ class ACEStepPipeline:
                 n_min=edit_n_min,
                 n_max=edit_n_max,
                 n_avg=edit_n_avg,
+                scheduler_type=scheduler_type,
             )
         else:
             target_latents = self.text2music_diffusion_process(
