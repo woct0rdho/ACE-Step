@@ -235,10 +235,10 @@ def create_text2music_ui(
             with gr.Accordion("Advanced Settings", open=False):
                 scheduler_type = gr.Radio(
                     ["euler", "heun", "pingpong"],
-                    value="pingpong",
+                    value="euler",
                     label="Scheduler Type",
                     elem_id="scheduler_type",
-                    info="Scheduler type for the generation. pingpong is recommended. heun will take more time.",
+                    info="Scheduler type for the generation. euler is recommended. heun will take more time. pingpong use SDE",
                 )
                 cfg_type = gr.Radio(
                     ["cfg", "apg", "cfg_star"],
