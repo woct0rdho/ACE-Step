@@ -52,6 +52,7 @@ class Pipeline(LightningModule):
         warmup_steps: int = 4000,
         dataset_path: str = "./data/your_dataset_path",
         lora_config_path: str = None,
+        adapter_name: str = "lora_adapter",
     ):
         super().__init__()
 
@@ -68,6 +69,7 @@ class Pipeline(LightningModule):
 
         transformers = acestep_pipeline.ace_step_transformer.float().cpu()
 
+        assert lora_config_path is not None, "Please provide a LoRA config path"
         if lora_config_path is not None:
             try:
                 from peft import LoraConfig
@@ -77,6 +79,7 @@ class Pipeline(LightningModule):
                 lora_config = json.load(f)
             lora_config = LoraConfig(**lora_config)
             transformers.add_adapter(adapter_config=lora_config)
+            self.adapter_name = adapter_name
 
         self.transformers = transformers
 
@@ -821,6 +824,7 @@ def main(args):
         every_plot_step=args.every_plot_step,
         dataset_path=args.dataset_path,
         checkpoint_dir=args.checkpoint_dir,
+        adapter_name=args.exp_name,
     )
     checkpoint_callback = ModelCheckpoint(
         monitor=None,
