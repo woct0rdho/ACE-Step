@@ -28,7 +28,7 @@ logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
 
 @dataclass
-class FlowMatchEulerDiscreteSchedulerOutput(BaseOutput):
+class FlowMatchPingPongSchedulerOutput(BaseOutput):
     """
     Output class for the scheduler's `step` function output.
 
@@ -41,9 +41,9 @@ class FlowMatchEulerDiscreteSchedulerOutput(BaseOutput):
     prev_sample: torch.FloatTensor
 
 
-class FlowMatchEulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
+class FlowMatchPingPongScheduler(SchedulerMixin, ConfigMixin):
     """
-    Euler scheduler.
+    PingPong scheduler.
 
     This model inherits from [`SchedulerMixin`] and [`ConfigMixin`]. Check the superclass documentation for the generic
     methods the library implements for all schedulers such as loading and saving.
@@ -74,7 +74,7 @@ class FlowMatchEulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         sigma_max: Optional[float] = 1.0,
     ):
         timesteps = np.linspace(
-            1.0, sigma_max*num_train_timesteps, num_train_timesteps, dtype=np.float32
+            1, sigma_max*num_train_timesteps, num_train_timesteps, dtype=np.float32
         )[::-1].copy()
         timesteps = torch.from_numpy(timesteps).to(dtype=torch.float32)
 
@@ -253,7 +253,7 @@ class FlowMatchEulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         generator: Optional[torch.Generator] = None,
         return_dict: bool = True,
         omega: Union[float, np.array] = 0.0,
-    ) -> Union[FlowMatchEulerDiscreteSchedulerOutput, Tuple]:
+    ) -> Union[FlowMatchPingPongSchedulerOutput, Tuple]:
         """
         Predict the sample from the previous timestep by reversing the SDE. This function propagates the diffusion
         process from the learned model outputs (most often the predicted noise).
@@ -324,69 +324,9 @@ class FlowMatchEulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         sigma = self.sigmas[self.step_index]
         sigma_next = self.sigmas[self.step_index + 1]
 
-        ## --
-        ## mean shift 1
-        dx = (sigma_next - sigma) * model_output
-        m = dx.mean()
-        # print(dx.shape) # torch.Size([1, 16, 128, 128])
-        # print(f'm: {m}') # m: -0.0014209747314453125
-        # raise NotImplementedError
-        dx_ = (dx - m) * omega + m
-        prev_sample = sample + dx_
-
-        # ## --
-        # ## mean shift 2
-        # m = model_output.mean()
-        # model_output_ = (model_output - m) * omega + m
-        # prev_sample = sample + (sigma_next - sigma) * model_output_
-
-        # ## --
-        # ## original
-        # prev_sample = sample + (sigma_next - sigma) * model_output * omega
-
-        # ## --
-        # ## spatial mean 1
-        # dx = (sigma_next - sigma) * model_output
-        # m = dx.mean(dim=(0, 1), keepdim=True)
-        # # print(dx.shape) # torch.Size([1, 16, 128, 128])
-        # # print(m.shape) # torch.Size([1, 1, 128, 128])
-        # # raise NotImplementedError
-        # dx_ = (dx - m) * omega + m
-        # prev_sample = sample + dx_
-
-        # ## --
-        # ## spatial mean 2
-        # m = model_output.mean(dim=(0, 1), keepdim=True)
-        # model_output_ = (model_output - m) * omega + m
-        # prev_sample = sample + (sigma_next - sigma) * model_output_
-
-        # ## --
-        # ## channel mean 1
-        # m = model_output.mean(dim=(2, 3), keepdim=True)
-        # # print(m.shape) # torch.Size([1, 16, 1, 1])
-        # model_output_ = (model_output - m) * omega + m
-        # prev_sample = sample + (sigma_next - sigma) * model_output_
-
-        # ## --
-        # ## channel mean 2
-        # dx = (sigma_next - sigma) * model_output
-        # m = dx.mean(dim=(2, 3), keepdim=True)
-        # # print(m.shape) # torch.Size([1, 16, 1, 1])
-        # dx_ = (dx - m) * omega + m
-        # prev_sample = sample + dx_
-
-        # ## --
-        # ## keep sample mean
-        # m_tgt = sample.mean()
-        # prev_sample_ = sample + (sigma_next - sigma) * model_output * omega
-        # m_src = prev_sample_.mean()
-        # prev_sample = prev_sample_ - m_src + m_tgt
-
-        # ## --
-        # ## test
-        # # print(sample.mean())
-        # prev_sample = sample + (sigma_next - sigma) * model_output * omega
-        # # raise NotImplementedError
+        denoised = sample - sigma * model_output
+        noise = torch.empty_like(sample).normal_(generator=generator)
+        prev_sample = (1 - sigma_next) * denoised + sigma_next * noise
 
         # Cast sample back to model compatible dtype
         prev_sample = prev_sample.to(model_output.dtype)
@@ -397,7 +337,7 @@ class FlowMatchEulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         if not return_dict:
             return (prev_sample,)
 
-        return FlowMatchEulerDiscreteSchedulerOutput(prev_sample=prev_sample)
+        return FlowMatchPingPongSchedulerOutput(prev_sample=prev_sample)
 
     def __len__(self):
         return self.config.num_train_timesteps

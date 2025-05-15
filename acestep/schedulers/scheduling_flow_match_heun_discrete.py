@@ -66,9 +66,10 @@ class FlowMatchHeunDiscreteScheduler(SchedulerMixin, ConfigMixin):
         self,
         num_train_timesteps: int = 1000,
         shift: float = 1.0,
+        sigma_max: Optional[float] = 1.0,
     ):
         timesteps = np.linspace(
-            1, num_train_timesteps, num_train_timesteps, dtype=np.float32
+            1.0, sigma_max*num_train_timesteps, num_train_timesteps, dtype=np.float32
         )[::-1].copy()
         timesteps = torch.from_numpy(timesteps).to(dtype=torch.float32)
 
