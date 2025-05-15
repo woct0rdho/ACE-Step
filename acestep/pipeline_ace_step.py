@@ -26,6 +26,9 @@ from acestep.schedulers.scheduling_flow_match_euler_discrete import (
 from acestep.schedulers.scheduling_flow_match_heun_discrete import (
     FlowMatchHeunDiscreteScheduler,
 )
+from acestep.schedulers.scheduling_flow_match_pingpong import (
+    FlowMatchPingPongScheduler,
+)
 from diffusers.pipelines.stable_diffusion_3.pipeline_stable_diffusion_3 import (
     retrieve_timesteps,
 )
@@ -1040,6 +1043,11 @@ class ACEStepPipeline:
             )
         elif scheduler_type == "heun":
             scheduler = FlowMatchHeunDiscreteScheduler(
+                num_train_timesteps=1000,
+                shift=3.0,
+            )
+        elif scheduler_type == "pingpong":
+            scheduler = FlowMatchPingPongScheduler(
                 num_train_timesteps=1000,
                 shift=3.0,
             )
