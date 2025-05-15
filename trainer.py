@@ -78,7 +78,7 @@ class Pipeline(LightningModule):
             with open(lora_config_path, encoding="utf-8") as f:
                 lora_config = json.load(f)
             lora_config = LoraConfig(**lora_config)
-            transformers.add_adapter(adapter_config=lora_config)
+            transformers.add_adapter(adapter_config=lora_config, adapter_name=adapter_name)
             self.adapter_name = adapter_name
 
         self.transformers = transformers
