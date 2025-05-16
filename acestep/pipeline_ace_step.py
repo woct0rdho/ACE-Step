@@ -171,16 +171,6 @@ class ACEStepPipeline:
         ace_step_checkpoint_path = ace_step_model_path
         text_encoder_checkpoint_path = text_encoder_model_path
 
-        self.music_dcae = MusicDCAE(
-            dcae_checkpoint_path=dcae_checkpoint_path,
-            vocoder_checkpoint_path=vocoder_checkpoint_path,
-        )
-        # self.music_dcae.to(device).eval().to(self.dtype)
-        if self.cpu_offload:  # might be redundant
-            self.music_dcae = self.music_dcae.to("cpu").eval().to(self.dtype)
-        else:
-            self.music_dcae = self.music_dcae.to(device).eval().to(self.dtype)
-
         self.ace_step_transformer = ACEStepTransformer2DModel.from_pretrained(
             ace_step_checkpoint_path, torch_dtype=self.dtype
         )
@@ -193,6 +183,20 @@ class ACEStepPipeline:
             self.ace_step_transformer = (
                 self.ace_step_transformer.to(device).eval().to(self.dtype)
             )
+        if self.torch_compile:
+            self.ace_step_transformer = torch.compile(self.ace_step_transformer)
+
+        self.music_dcae = MusicDCAE(
+            dcae_checkpoint_path=dcae_checkpoint_path,
+            vocoder_checkpoint_path=vocoder_checkpoint_path,
+        )
+        # self.music_dcae.to(device).eval().to(self.dtype)
+        if self.cpu_offload:  # might be redundant
+            self.music_dcae = self.music_dcae.to("cpu").eval().to(self.dtype)
+        else:
+            self.music_dcae = self.music_dcae.to(device).eval().to(self.dtype)
+        if self.torch_compile:
+            self.music_dcae = torch.compile(self.music_dcae)
 
         lang_segment = LangSegment()
 
@@ -309,6 +313,9 @@ class ACEStepPipeline:
             text_encoder_model = text_encoder_model.to(device).eval().to(self.dtype)
         text_encoder_model.requires_grad_(False)
         self.text_encoder_model = text_encoder_model
+        if self.torch_compile:
+            self.text_encoder_model = torch.compile(self.text_encoder_model)
+
         self.text_tokenizer = AutoTokenizer.from_pretrained(
             text_encoder_checkpoint_path
         )
@@ -316,10 +323,6 @@ class ACEStepPipeline:
 
         # compile
         if self.torch_compile:
-            self.music_dcae = torch.compile(self.music_dcae)
-            self.ace_step_transformer = torch.compile(self.ace_step_transformer)
-            self.text_encoder_model = torch.compile(self.text_encoder_model)
-
             if export_quantized_weights:
                 from torchao.quantization import (
                     quantize_,
