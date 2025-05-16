@@ -183,8 +183,8 @@ class ACEStepPipeline:
             self.ace_step_transformer = (
                 self.ace_step_transformer.to(device).eval().to(self.dtype)
             )
-        if self.torch_compile:
-            self.ace_step_transformer = torch.compile(self.ace_step_transformer)
+        #if self.torch_compile:
+        #    self.ace_step_transformer = torch.compile(self.ace_step_transformer)
 
         self.music_dcae = MusicDCAE(
             dcae_checkpoint_path=dcae_checkpoint_path,
