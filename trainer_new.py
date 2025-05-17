@@ -130,7 +130,7 @@ class Pipeline(LightningModule):
         lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
             optimizer, lr_lambda, last_epoch=-1
         )
-        return [optimizer], lr_scheduler
+        return [optimizer], [{"scheduler": lr_scheduler, "interval": "step"}]
 
     def train_dataloader(self):
         ds = Dataset.load_from_disk(self.hparams.dataset_path).with_format(
