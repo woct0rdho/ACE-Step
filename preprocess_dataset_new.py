@@ -308,7 +308,7 @@ class Preprocessor(torch.nn.Module):
         }
 
 
-def get_generator(input_name):
+def get_generator(input_name, checkpoint_dir):
     def gen():
         ds = Text2MusicDataset(
             train=True,
@@ -323,7 +323,7 @@ def get_generator(input_name):
             collate_fn=ds.collate_fn,
             # persistent_workers=True,
         )
-        prep = Preprocessor()
+        prep = Preprocessor(checkpoint_dir)
         for batch in tqdm(dl):
             batch = prep.preprocess(batch)
             batch = {k: v[0] for k, v in batch.items()}
@@ -347,9 +347,15 @@ def main():
         default=r"C:\data\sawano_prep",
         help="The preprocessed dataset.",
     )
+    parser.add_argument(
+        "--checkpoint_dir",
+        type=str,
+        default=None,
+        help="Directory to cache model checkpoints.",
+    )
     args = parser.parse_args()
 
-    ds = Dataset.from_generator(get_generator(args.input_name))
+    ds = Dataset.from_generator(get_generator(args.input_name, args.checkpoint_dir))
     ds.save_to_disk(args.output_name)
 
 
