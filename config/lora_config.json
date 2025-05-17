@@ -1,6 +1,6 @@
 {
-    "r": 16,
-    "lora_alpha": 16,
+    "r": 64,
+    "lora_alpha": 1,
     "target_modules": [
         "linear_q",
         "linear_k",

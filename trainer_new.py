@@ -59,7 +59,7 @@ class Pipeline(LightningModule):
         timestep_densities_type: str = "logit_normal",
         ssl_coeff: float = 1.0,
         checkpoint_dir: str = None,
-        max_steps: int = 100000,
+        max_steps: int = 10000,
         warmup_steps: int = 10,
         dataset_path: str = "./data/your_dataset_path",
         lora_config_path: str = None,
@@ -105,9 +105,7 @@ class Pipeline(LightningModule):
             p for name, p in self.transformer.named_parameters() if p.requires_grad
         ]
         optimizer = torch.optim.AdamW(
-            params=[
-                {"params": trainable_params},
-            ],
+            params=trainable_params,
             lr=self.hparams.learning_rate,
             weight_decay=self.hparams.weight_decay,
             betas=(0.8, 0.9),
@@ -304,7 +302,7 @@ class Pipeline(LightningModule):
         os.makedirs(lora_path, exist_ok=True)
         self.transformer.save_lora_adapter(lora_path, adapter_name=self.adapter_name)
 
-        # Clean up old loras and save at most 5 for each epoch
+        # Clean up old loras and save at most 5
         lora_paths = glob(os.path.join(checkpoint_dir, "*_lora"))
         lora_paths = natsorted(lora_paths)
         if len(lora_paths) > 5:
@@ -348,7 +346,7 @@ def main(args):
         callbacks=[checkpoint_callback],
         gradient_clip_val=args.gradient_clip_val,
         gradient_clip_algorithm=args.gradient_clip_algorithm,
-        reload_dataloaders_every_n_epochs=args.reload_dataloaders_every_n_epochs,
+        # reload_dataloaders_every_n_epochs=args.reload_dataloaders_every_n_epochs,
         val_check_interval=args.val_check_interval,
     )
 
@@ -365,7 +363,7 @@ if __name__ == "__main__":
     args.add_argument("--learning_rate", type=float, default=1e-4)
     args.add_argument("--num_workers", type=int, default=0)
     args.add_argument("--epochs", type=int, default=-1)
-    args.add_argument("--max_steps", type=int, default=100000)
+    args.add_argument("--max_steps", type=int, default=10000)
     args.add_argument("--every_n_train_steps", type=int, default=100)
     args.add_argument("--dataset_path", type=str, default=r"C:\data\sawano_prep")
     args.add_argument("--exp_name", type=str, default="sawano")
@@ -377,11 +375,9 @@ if __name__ == "__main__":
     args.add_argument("--checkpoint_dir", type=str, default=None)
     args.add_argument("--gradient_clip_val", type=float, default=1)
     args.add_argument("--gradient_clip_algorithm", type=str, default="norm")
-    args.add_argument("--reload_dataloaders_every_n_epochs", type=int, default=1)
+    # args.add_argument("--reload_dataloaders_every_n_epochs", type=int, default=0)
     args.add_argument("--every_plot_step", type=int, default=1000)
     args.add_argument("--val_check_interval", type=int, default=None)
-    args.add_argument(
-        "--lora_config_path", type=str, default="./config/zh_rap_lora_config.json"
-    )
+    args.add_argument("--lora_config_path", type=str, default="./config/lora_config.json")
     args = args.parse_args()
     main(args)
