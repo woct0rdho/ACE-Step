@@ -311,8 +311,7 @@ class Pipeline(LightningModule):
             shutil.rmtree(lora_paths[0])
 
         # Don't save the full model
-        for k in list(checkpoint.keys()):
-            del checkpoint[k]
+        checkpoint.clear()
         return checkpoint
 
 
