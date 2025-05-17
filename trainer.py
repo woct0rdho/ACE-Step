@@ -49,7 +49,7 @@ class Pipeline(LightningModule):
         ssl_coeff: float = 1.0,
         checkpoint_dir=None,
         max_steps: int = 200000,
-        warmup_steps: int = 4000,
+        warmup_steps: int = 10,
         dataset_path: str = "./data/your_dataset_path",
         lora_config_path: str = None,
         adapter_name: str = "lora_adapter",
@@ -440,7 +440,7 @@ class Pipeline(LightningModule):
         lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
             optimizer, lr_lambda, last_epoch=-1
         )
-        return [optimizer], lr_scheduler
+        return [optimizer], [{"scheduler": lr_scheduler, "interval": "step"}]
 
     def train_dataloader(self):
         self.train_dataset = Text2MusicDataset(
