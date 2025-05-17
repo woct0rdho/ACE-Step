@@ -51,14 +51,6 @@ import torchaudio
 import librosa
 from .cpu_offload import cpu_offload
 
-
-torch.backends.cudnn.benchmark = False
-torch.set_float32_matmul_precision("high")
-torch.backends.cudnn.deterministic = True
-torch.backends.cuda.matmul.allow_tf32 = True
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
-
 SUPPORT_LANGUAGES = {
     "en": 259,
     "de": 260,

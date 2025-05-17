@@ -1,8 +1,7 @@
 {
-    "r": 256,
-    "lora_alpha": 32,
+    "r": 16,
+    "lora_alpha": 16,
     "target_modules": [
-        "speaker_embedder",
         "linear_q",
         "linear_k",
         "linear_v",

@@ -407,6 +407,11 @@ class Text2MusicDataset(Dataset):
             logger.error(f"Failed to load audio {item}")
             return None
 
+        if audio.shape[-1] > sr * 300:
+            # Too long
+            print("Cropped", round(audio.shape[-1] / sr), item["filename"])
+            audio = audio[:, :sr * 300]
+
         # Convert mono to stereo if needed
         if audio.shape[0] == 1:
             audio = torch.cat([audio, audio], dim=0)

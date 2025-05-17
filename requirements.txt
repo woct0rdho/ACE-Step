@@ -24,3 +24,4 @@ click
 peft
 tensorboard
 tensorboardX
+natsort==8.4.0
