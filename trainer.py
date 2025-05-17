@@ -68,6 +68,7 @@ class Pipeline(LightningModule):
         acestep_pipeline.load_checkpoint(acestep_pipeline.checkpoint_dir)
 
         transformers = acestep_pipeline.ace_step_transformer.float().cpu()
+        transformers.enable_gradient_checkpointing()
 
         assert lora_config_path is not None, "Please provide a LoRA config path"
         if lora_config_path is not None:

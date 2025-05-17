@@ -360,10 +360,6 @@ class ACEStepTransformer2DModel(
         for module in self.children():
             fn_recursive_feed_forward(module, chunk_size, dim)
 
-    def _set_gradient_checkpointing(self, module, value=False):
-        if hasattr(module, "gradient_checkpointing"):
-            module.gradient_checkpointing = value
-
     def forward_lyric_encoder(
         self,
         lyric_token_idx: Optional[torch.LongTensor] = None,
@@ -456,20 +452,8 @@ class ACEStepTransformer2DModel(
 
             if self.training and self.gradient_checkpointing:
 
-                def create_custom_forward(module, return_dict=None):
-                    def custom_forward(*inputs):
-                        if return_dict is not None:
-                            return module(*inputs, return_dict=return_dict)
-                        else:
-                            return module(*inputs)
-
-                    return custom_forward
-
-                ckpt_kwargs: Dict[str, Any] = (
-                    {"use_reentrant": False} if is_torch_version(">=", "1.11.0") else {}
-                )
                 hidden_states = torch.utils.checkpoint.checkpoint(
-                    create_custom_forward(block),
+                    block,
                     hidden_states=hidden_states,
                     attention_mask=attention_mask,
                     encoder_hidden_states=encoder_hidden_states,
@@ -477,7 +461,7 @@ class ACEStepTransformer2DModel(
                     rotary_freqs_cis=rotary_freqs_cis,
                     rotary_freqs_cis_cross=encoder_rotary_freqs_cis,
                     temb=temb,
-                    **ckpt_kwargs,
+                    use_reentrant=False,
                 )
 
             else:
