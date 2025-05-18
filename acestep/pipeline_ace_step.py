@@ -135,6 +135,21 @@ class ACEStepPipeline:
         self.cpu_offload = cpu_offload
         self.quantized = quantized
         self.overlapped_decode = overlapped_decode
+        
+    def cleanup_memory(self):
+        """Clean up GPU and CPU memory to prevent VRAM overflow during multiple generations."""
+        # Clear CUDA cache
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            
+            # Log memory usage if in verbose mode
+            allocated = torch.cuda.memory_allocated() / (1024 ** 3)
+            reserved = torch.cuda.memory_reserved() / (1024 ** 3)
+            logger.info(f"GPU Memory: {allocated:.2f}GB allocated, {reserved:.2f}GB reserved")
+        
+        # Collect Python garbage
+        import gc
+        gc.collect()
 
     def load_checkpoint(self, checkpoint_dir=None, export_quantized_weights=False):
         device = self.device
@@ -1869,6 +1884,9 @@ class ACEStepPipeline:
             save_path=save_path,
             format=format,
         )
+        
+        # Clean up memory after generation
+        self.cleanup_memory()
 
         end_time = time.time()
         latent2audio_time_cost = end_time - start_time
