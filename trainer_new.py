@@ -137,7 +137,7 @@ class Pipeline(LightningModule):
         return DataLoader(
             ds,
             batch_size=self.hparams.batch_size,
-            shuffle=False,
+            shuffle=True,
             num_workers=self.hparams.num_workers,
             # pin_memory=True,
             # persistent_workers=True,
