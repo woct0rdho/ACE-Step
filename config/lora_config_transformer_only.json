@@ -1,0 +1,11 @@
+{
+    "r": 64,
+    "lora_alpha": 1,
+    "target_modules": [
+        "to_q",
+        "to_k",
+        "to_v",
+        "to_out.0"
+    ],
+    "use_rslora": true
+}

@@ -144,7 +144,7 @@ class Pipeline(LightningModule):
             # persistent_workers=True,
         )
 
-    def get_sd3_sigmas(self, timesteps, device, n_dim=4, dtype=torch.float32):
+    def get_sd3_sigmas(self, timesteps, device, n_dim, dtype):
         sigmas = self.scheduler.sigmas.to(device=device, dtype=dtype)
         schedule_timesteps = self.scheduler.timesteps.to(device)
         timesteps = timesteps.to(device)
@@ -227,7 +227,7 @@ class Pipeline(LightningModule):
             speaker_embeds=speaker_embds,
             lyric_token_idx=lyric_token_ids,
             lyric_mask=lyric_mask,
-            timestep=timesteps.to(device).to(dtype),
+            timestep=timesteps.to(device, dtype),
             ssl_hidden_states=all_ssl_hiden_states,
         )
         model_pred = transformer_output.sample
@@ -246,6 +246,7 @@ class Pipeline(LightningModule):
             .expand(-1, target_image.shape[1], target_image.shape[2], -1)
         )
 
+        # TODO: Check if the masked mean is correct
         selected_model_pred = (model_pred * mask).reshape(bsz, -1).contiguous()
         selected_target = (target * mask).reshape(bsz, -1).contiguous()
 
