@@ -47,56 +47,56 @@ def _to_bf16(x):
 class Pipeline(LightningModule):
     def __init__(
         self,
-        learning_rate: float = 1e-4,
-        num_workers: int = 4,
-        train: bool = True,
+        # Model
+        checkpoint_dir: str = None,
         T: int = 1000,
-        weight_decay: float = 1e-2,
-        every_plot_step: int = 1000,
         shift: float = 3.0,
+        timestep_densities_type: str = "logit_normal",
         logit_mean: float = 0.0,
         logit_std: float = 1.0,
-        timestep_densities_type: str = "logit_normal",
+        lora_config_path: str = None,
+        # Data
+        dataset_path: str = "./data/your_dataset_path",
+        batch_size: int = 1,
+        num_workers: int = 0,
+        # Optimizer
         ssl_coeff: float = 1.0,
-        checkpoint_dir: str = None,
+        learning_rate: float = 1e-4,
+        weight_decay: float = 1e-2,
         max_steps: int = 10000,
         warmup_steps: int = 10,
-        dataset_path: str = "./data/your_dataset_path",
-        lora_config_path: str = None,
+        # Others
         adapter_name: str = "lora_adapter",
+        every_plot_step: int = 1000,
     ):
         super().__init__()
-
         self.save_hyperparameters()
-        self.is_train = train
-        self.T = T
 
         # Initialize scheduler
         self.scheduler = self.get_scheduler()
 
-        # step 1: load model
+        # Load model
         acestep_pipeline = ACEStepPipeline(checkpoint_dir)
         acestep_pipeline.load_checkpoint(acestep_pipeline.checkpoint_dir)
         self.transformer = acestep_pipeline.ace_step_transformer.to(torch.bfloat16)
+        self.transformer.train()
         self.transformer.enable_gradient_checkpointing()
         del acestep_pipeline
 
+        # Load LoRA
         assert lora_config_path is not None, "Please provide a LoRA config path"
         with open(lora_config_path, encoding="utf-8") as f:
             lora_config = json.load(f)
         lora_config = LoraConfig(**lora_config)
         self.transformer.add_adapter(
-            adapter_config=lora_config, adapter_name=adapter_name
+            adapter_config=lora_config,
+            adapter_name=adapter_name,
         )
         self.adapter_name = adapter_name
 
-        if self.is_train:
-            self.transformer.train()
-            self.ssl_coeff = ssl_coeff
-
     def get_scheduler(self):
         return FlowMatchEulerDiscreteScheduler(
-            num_train_timesteps=self.T,
+            num_train_timesteps=self.hparams.T,
             shift=self.hparams.shift,
         )
 
@@ -136,7 +136,7 @@ class Pipeline(LightningModule):
         )
         return DataLoader(
             ds,
-            batch_size=1,
+            batch_size=self.hparams.batch_size,
             shuffle=False,
             num_workers=self.hparams.num_workers,
             # pin_memory=True,
@@ -273,7 +273,7 @@ class Pipeline(LightningModule):
         if len(proj_losses) > 0:
             total_proj_loss = total_proj_loss / len(proj_losses)
 
-        loss = loss + total_proj_loss * self.ssl_coeff
+        loss = loss + total_proj_loss * self.hparams.ssl_coeff
         self.log(f"{prefix}/loss", loss, on_step=True, on_epoch=False, prog_bar=True)
 
         # Log learning rate if scheduler exists
@@ -315,15 +315,21 @@ class Pipeline(LightningModule):
 
 def main(args):
     model = Pipeline(
-        learning_rate=args.learning_rate,
-        num_workers=args.num_workers,
-        shift=args.shift,
-        max_steps=args.max_steps,
-        every_plot_step=args.every_plot_step,
-        dataset_path=args.dataset_path,
+        # Model
         checkpoint_dir=args.checkpoint_dir,
+        shift=args.shift,
         lora_config_path=args.lora_config_path,
+        # Data
+        dataset_path=args.dataset_path,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
+        # Optimizer
+        learning_rate=args.learning_rate,
+        max_steps=args.max_steps,
+        warmup_steps=args.warmup_steps,
+        # Others
         adapter_name=args.exp_name,
+        every_plot_step=args.every_plot_step,
     )
     checkpoint_callback = ModelCheckpoint(
         every_n_train_steps=args.every_n_train_steps,
@@ -334,50 +340,60 @@ def main(args):
     )
     trainer = Trainer(
         accelerator="gpu",
-        devices=args.devices,
-        num_nodes=args.num_nodes,
-        precision=args.precision,
-        accumulate_grad_batches=args.accumulate_grad_batches,
         # strategy="ddp_find_unused_parameters_true",
-        max_epochs=args.epochs,
-        max_steps=args.max_steps,
+        # devices=args.devices,
+        # num_nodes=args.num_nodes,
+        precision=args.precision,
         log_every_n_steps=1,
         logger=logger_callback,
         callbacks=[checkpoint_callback],
+        max_epochs=args.epochs,
+        max_steps=args.max_steps,
+        val_check_interval=args.val_check_interval,
+        accumulate_grad_batches=args.accumulate_grad_batches,
         gradient_clip_val=args.gradient_clip_val,
         gradient_clip_algorithm=args.gradient_clip_algorithm,
         # reload_dataloaders_every_n_epochs=args.reload_dataloaders_every_n_epochs,
-        val_check_interval=args.val_check_interval,
     )
 
     trainer.fit(
         model,
-        ckpt_path=args.ckpt_path,
+        # ckpt_path=args.ckpt_path,
     )
 
 
 if __name__ == "__main__":
     args = argparse.ArgumentParser()
-    args.add_argument("--num_nodes", type=int, default=1)
+
+    # Model
+    args.add_argument("--checkpoint_dir", type=str, default=None)
     args.add_argument("--shift", type=float, default=3.0)
-    args.add_argument("--learning_rate", type=float, default=1e-4)
+    args.add_argument("--lora_config_path", type=str, default="./config/lora_config.json")
+
+    # Data
+    args.add_argument("--dataset_path", type=str, default=r"C:\data\sawano_prep")
+    args.add_argument("--batch_size", type=int, default=1)
     args.add_argument("--num_workers", type=int, default=0)
+
+    # Optimizer
+    args.add_argument("--learning_rate", type=float, default=1e-4)
     args.add_argument("--epochs", type=int, default=-1)
     args.add_argument("--max_steps", type=int, default=10000)
-    args.add_argument("--every_n_train_steps", type=int, default=100)
-    args.add_argument("--dataset_path", type=str, default=r"C:\data\sawano_prep")
-    args.add_argument("--exp_name", type=str, default="sawano")
-    args.add_argument("--precision", type=str, default="bf16")
+    args.add_argument("--warmup_steps", type=int, default=10)
     args.add_argument("--accumulate_grad_batches", type=int, default=1)
-    args.add_argument("--devices", type=int, default=1)
-    # args.add_argument("--logger_dir", type=str, default="./exps/logs/")
-    args.add_argument("--ckpt_path", type=str, default=None)
-    args.add_argument("--checkpoint_dir", type=str, default=None)
     args.add_argument("--gradient_clip_val", type=float, default=1)
     args.add_argument("--gradient_clip_algorithm", type=str, default="norm")
-    # args.add_argument("--reload_dataloaders_every_n_epochs", type=int, default=0)
+
+    # Others
+    # args.add_argument("--devices", type=int, default=1)
+    # args.add_argument("--num_nodes", type=int, default=1)
+    args.add_argument("--exp_name", type=str, default="sawano")
+    args.add_argument("--precision", type=str, default="bf16-mixed")
+    args.add_argument("--every_n_train_steps", type=int, default=100)
     args.add_argument("--every_plot_step", type=int, default=1000)
     args.add_argument("--val_check_interval", type=int, default=None)
-    args.add_argument("--lora_config_path", type=str, default="./config/lora_config.json")
+    # args.add_argument("--ckpt_path", type=str, default=None)
+    # args.add_argument("--reload_dataloaders_every_n_epochs", type=int, default=0)
+
     args = args.parse_args()
     main(args)
