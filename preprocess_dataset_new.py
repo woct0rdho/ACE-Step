@@ -267,6 +267,7 @@ class Preprocessor(torch.nn.Module):
         # cfg
         if train:
             # TODO: Check the dropout rates
+            # Maybe implement the dropout in training
             prompt_dropout = 0
             speaker_dropout = 0
             lyric_dropout = 0

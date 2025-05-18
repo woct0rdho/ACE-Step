@@ -77,7 +77,7 @@ def main():
     parser.add_argument(
         "--default_tag",
         type=str,
-        default="sawano hiroyuki",
+        default="",
         help="Default tag when there is no prompt file.",
     )
     args = parser.parse_args()

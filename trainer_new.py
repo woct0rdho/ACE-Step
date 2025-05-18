@@ -401,7 +401,7 @@ if __name__ == "__main__":
     # Model
     args.add_argument("--checkpoint_dir", type=str, default=None)
     args.add_argument("--shift", type=float, default=3.0)
-    args.add_argument("--lora_config_path", type=str, default="./config/lora_config.json")
+    args.add_argument("--lora_config_path", type=str, default="./config/lora_config_transformer_only.json")
 
     # Data
     args.add_argument("--dataset_path", type=str, default=r"C:\data\sawano_prep")
