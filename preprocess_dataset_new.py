@@ -265,24 +265,28 @@ class Preprocessor(torch.nn.Module):
         lyric_mask = batch["lyric_masks"].to(dtype)
 
         # cfg
-        # TODO: Check the dropout rates
         if train:
+            # TODO: Check the dropout rates
+            prompt_dropout = 0
+            speaker_dropout = 0
+            lyric_dropout = 0
+
             # N x T x 768
             encoder_text_hidden_states = torch.where(
-                (torch.rand(bs) < 0.15).unsqueeze(1).unsqueeze(1),
+                (torch.rand(bs) > prompt_dropout).unsqueeze(1).unsqueeze(1),
                 encoder_text_hidden_states,
                 torch.zeros_like(encoder_text_hidden_states),
             )
 
             # N x 512
             speaker_embds = torch.where(
-                (torch.rand(bs) < 0.50).unsqueeze(1),
+                (torch.rand(bs) > speaker_dropout).unsqueeze(1),
                 speaker_embds,
                 torch.zeros_like(speaker_embds),
             )
 
             # Lyrics
-            full_cfg_condition_mask = (torch.rand(bs) < 0.15).unsqueeze(1)
+            full_cfg_condition_mask = (torch.rand(bs) > lyric_dropout).unsqueeze(1)
             lyric_token_ids = torch.where(
                 full_cfg_condition_mask,
                 lyric_token_ids,
