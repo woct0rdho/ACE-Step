@@ -49,7 +49,7 @@ class Pipeline(LightningModule):
         ssl_coeff: float = 1.0,
         checkpoint_dir=None,
         max_steps: int = 200000,
-        warmup_steps: int = 4000,
+        warmup_steps: int = 10,
         dataset_path: str = "./data/your_dataset_path",
         lora_config_path: str = None,
         adapter_name: str = "lora_adapter",
@@ -68,6 +68,7 @@ class Pipeline(LightningModule):
         acestep_pipeline.load_checkpoint(acestep_pipeline.checkpoint_dir)
 
         transformers = acestep_pipeline.ace_step_transformer.float().cpu()
+        transformers.enable_gradient_checkpointing()
 
         assert lora_config_path is not None, "Please provide a LoRA config path"
         if lora_config_path is not None:
@@ -76,6 +77,7 @@ class Pipeline(LightningModule):
             except ImportError:
                 raise ImportError("Please install peft library to use LoRA training")
             with open(lora_config_path, encoding="utf-8") as f:
+                import json
                 lora_config = json.load(f)
             lora_config = LoraConfig(**lora_config)
             transformers.add_adapter(adapter_config=lora_config, adapter_name=adapter_name)
@@ -438,7 +440,7 @@ class Pipeline(LightningModule):
         lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
             optimizer, lr_lambda, last_epoch=-1
         )
-        return [optimizer], lr_scheduler
+        return [optimizer], [{"scheduler": lr_scheduler, "interval": "step"}]
 
     def train_dataloader(self):
         self.train_dataset = Text2MusicDataset(
@@ -825,6 +827,7 @@ def main(args):
         dataset_path=args.dataset_path,
         checkpoint_dir=args.checkpoint_dir,
         adapter_name=args.exp_name,
+        lora_config_path=args.lora_config_path
     )
     checkpoint_callback = ModelCheckpoint(
         monitor=None,
