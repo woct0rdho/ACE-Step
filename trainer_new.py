@@ -16,6 +16,7 @@ import torch.utils.data
 from datasets import Dataset
 from natsort import natsorted
 from peft import LoraConfig
+from prodigyopt import Prodigy
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.core import LightningModule
@@ -61,6 +62,7 @@ class Pipeline(LightningModule):
         num_workers: int = 0,
         # Optimizer
         ssl_coeff: float = 1.0,
+        optimizer: str = "adamw",
         learning_rate: float = 1e-4,
         weight_decay: float = 1e-2,
         max_steps: int = 10000,
@@ -105,12 +107,35 @@ class Pipeline(LightningModule):
         trainable_params = [
             p for name, p in self.transformer.named_parameters() if p.requires_grad
         ]
-        optimizer = torch.optim.AdamW(
-            params=trainable_params,
-            lr=self.hparams.learning_rate,
-            weight_decay=self.hparams.weight_decay,
-            betas=(0.8, 0.9),
-        )
+
+        if self.hparams.optimizer == "adamw":
+            optimizer = torch.optim.AdamW(
+                params=trainable_params,
+                lr=self.hparams.learning_rate,
+                weight_decay=self.hparams.weight_decay,
+                betas=(0.8, 0.9),
+            )
+            lr_multiplier_final = 0
+        elif self.hparams.optimizer == "prodigy":
+            if self.hparams.learning_rate < 0.1:
+                print(
+                    "Warning: With Prodigy optimizer, we can usually set learning_rate = 1"
+                )
+            if self.hparams.warmup_steps > 0:
+                print(
+                    "Warning: With Prodigy optimizer, we can usually set warmup_steps = 0"
+                )
+            optimizer = Prodigy(
+                params=trainable_params,
+                lr=self.hparams.learning_rate,
+                weight_decay=self.hparams.weight_decay,
+                use_bias_correction=True,
+                safeguard_warmup=True,
+            )
+            lr_multiplier_final = 0.1
+        else:
+            raise ValueError(f"Unknown optimizer: {self.hparams.optimizer}")
+
         max_steps = self.hparams.max_steps
         warmup_steps = self.hparams.warmup_steps  # New hyperparameter for warmup steps
 
@@ -124,7 +149,11 @@ class Pipeline(LightningModule):
                 progress = float(current_step - warmup_steps) / float(
                     max(1, max_steps - warmup_steps)
                 )
-                return max(0.0, 1.0 - progress)
+                multiplier = max(0.0, 1.0 - progress)
+                multiplier = (
+                    multiplier * (1 - lr_multiplier_final) + lr_multiplier_final
+                )
+                return multiplier
 
         lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
             optimizer, lr_lambda, last_epoch=-1
@@ -326,6 +355,7 @@ def main(args):
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         # Optimizer
+        optimizer=args.optimizer,
         learning_rate=args.learning_rate,
         max_steps=args.max_steps,
         warmup_steps=args.warmup_steps,
@@ -379,6 +409,7 @@ if __name__ == "__main__":
     args.add_argument("--num_workers", type=int, default=0)
 
     # Optimizer
+    args.add_argument("--optimizer", type=str, default="adamw")
     args.add_argument("--learning_rate", type=float, default=1e-4)
     args.add_argument("--epochs", type=int, default=-1)
     args.add_argument("--max_steps", type=int, default=10000)
