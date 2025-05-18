@@ -67,6 +67,7 @@ class Pipeline(LightningModule):
         warmup_steps: int = 10,
         # Others
         adapter_name: str = "lora_adapter",
+        save_last: int = 5,
         every_plot_step: int = 1000,
     ):
         super().__init__()
@@ -302,10 +303,10 @@ class Pipeline(LightningModule):
         os.makedirs(lora_path, exist_ok=True)
         self.transformer.save_lora_adapter(lora_path, adapter_name=self.adapter_name)
 
-        # Clean up old loras and save at most 5
+        # Clean up old loras and only save the last few loras
         lora_paths = glob(os.path.join(checkpoint_dir, "*_lora"))
         lora_paths = natsorted(lora_paths)
-        if len(lora_paths) > 5:
+        if len(lora_paths) > self.hparams.save_last:
             shutil.rmtree(lora_paths[0])
 
         # Don't save the full model
@@ -329,6 +330,7 @@ def main(args):
         warmup_steps=args.warmup_steps,
         # Others
         adapter_name=args.exp_name,
+        save_last=args.save_last,
         every_plot_step=args.every_plot_step,
     )
     checkpoint_callback = ModelCheckpoint(
@@ -390,6 +392,7 @@ if __name__ == "__main__":
     args.add_argument("--exp_name", type=str, default="sawano")
     args.add_argument("--precision", type=str, default="bf16-mixed")
     args.add_argument("--every_n_train_steps", type=int, default=100)
+    args.add_argument("--save_last", type=int, default=5)
     args.add_argument("--every_plot_step", type=int, default=1000)
     args.add_argument("--val_check_interval", type=int, default=None)
     # args.add_argument("--ckpt_path", type=str, default=None)
