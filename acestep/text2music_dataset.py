@@ -407,10 +407,10 @@ class Text2MusicDataset(Dataset):
             logger.error(f"Failed to load audio {item}")
             return None
 
-        if audio.shape[-1] > sr * 300:
-            # Too long
+        max_duration = 360
+        if audio.shape[-1] > sr * max_duration:
             print("Cropped", round(audio.shape[-1] / sr), item["filename"])
-            audio = audio[:, :sr * 300]
+            audio = audio[:, :sr * max_duration]
 
         # Convert mono to stereo if needed
         if audio.shape[0] == 1:
@@ -504,8 +504,8 @@ class Text2MusicDataset(Dataset):
             )
 
         # Limit audio length
-        longest_length = 24 * 10 * 48000  # 240 seconds
-        music_wavs = music_wavs[:, :longest_length]
+        # longest_length = 24 * 10 * 48000  # 240 seconds
+        # music_wavs = music_wavs[:, :longest_length]
         vocal_wavs = torch.zeros_like(music_wavs)
         wav_len = music_wavs.shape[-1]
 
