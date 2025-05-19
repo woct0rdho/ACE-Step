@@ -702,16 +702,13 @@ class ACEStepPipeline:
                         attention_mask=attention_mask,
                         momentum_buffer=momentum_buffer,
                     )
-                    V_delta_avg += (1 / n_avg) * (
-                        Vt_tar - Vt_src
-                    )  # - (hfg-1)*( x_src))
+                    V_delta_avg += (1 / n_avg) * (Vt_tar - Vt_src) # - (hfg - 1) * (x_src)
 
-                zt_edit = zt_edit.to(torch.float32)
+                zt_edit = zt_edit.to(torch.float32) # arbitrary, should be settable for compatibility
                 if scheduler_type != "pingpong":
                     # propagate direct ODE
-                    zt_edit = zt_edit.to(torch.float32)
                     zt_edit = zt_edit + (t_im1 - t_i) * V_delta_avg
-                    zt_edit = zt_edit.to(V_delta_avg.dtype)
+                    zt_edit = zt_edit.to(self.dtype)
                 else:
                     # propagate pingpong SDE
                     zt_edit_denoised = zt_edit - t_i * V_delta_avg
