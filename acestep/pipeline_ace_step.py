@@ -178,15 +178,10 @@ class ACEStepPipeline:
                 logger.info(f"Download models from Hugging Face: {REPO_ID}, cache to: {checkpoint_dir}")
                 checkpoint_dir_models = snapshot_download(REPO_ID, cache_dir=checkpoint_dir)
 
-        dcae_model_path = os.path.join(checkpoint_dir_models, "music_dcae_f8c8")
-        vocoder_model_path = os.path.join(checkpoint_dir_models, "music_vocoder")
-        ace_step_model_path = os.path.join(checkpoint_dir_models, "ace_step_transformer")
-        text_encoder_model_path = os.path.join(checkpoint_dir_models, "umt5-base")
-        
-        dcae_checkpoint_path = dcae_model_path
-        vocoder_checkpoint_path = vocoder_model_path
-        ace_step_checkpoint_path = ace_step_model_path
-        text_encoder_checkpoint_path = text_encoder_model_path
+        dcae_checkpoint_path = os.path.join(checkpoint_dir_models, "music_dcae_f8c8")
+        vocoder_checkpoint_path = os.path.join(checkpoint_dir_models, "music_vocoder")
+        ace_step_checkpoint_path = os.path.join(checkpoint_dir_models, "ace_step_transformer")
+        text_encoder_checkpoint_path = os.path.join(checkpoint_dir_models, "umt5-base")
 
         self.ace_step_transformer = ACEStepTransformer2DModel.from_pretrained(
             ace_step_checkpoint_path, torch_dtype=self.dtype
@@ -261,38 +256,32 @@ class ACEStepPipeline:
                 torch.save(
                     self.ace_step_transformer.state_dict(),
                     os.path.join(
-                        ace_step_model_path, "diffusion_pytorch_model_int4wo.bin"
+                        ace_step_checkpoint_path, "diffusion_pytorch_model_int4wo.bin"
                     ),
                 )
                 print(
                     "Quantized Weights Saved to: ",
                     os.path.join(
-                        ace_step_model_path, "diffusion_pytorch_model_int4wo.bin"
+                        ace_step_checkpoint_path, "diffusion_pytorch_model_int4wo.bin"
                     ),
                 )
                 torch.save(
                     self.text_encoder_model.state_dict(),
-                    os.path.join(text_encoder_model_path, "pytorch_model_int4wo.bin"),
+                    os.path.join(text_encoder_checkpoint_path, "pytorch_model_int4wo.bin"),
                 )
                 print(
                     "Quantized Weights Saved to: ",
-                    os.path.join(text_encoder_model_path, "pytorch_model_int4wo.bin"),
+                    os.path.join(text_encoder_checkpoint_path, "pytorch_model_int4wo.bin"),
                 )
 
 
     def load_quantized_checkpoint(self, checkpoint_dir=None):
         device = self.device
 
-        dcae_model_path = os.path.join(checkpoint_dir, "music_dcae_f8c8")
-        vocoder_model_path = os.path.join(checkpoint_dir, "music_vocoder")
-        ace_step_model_path = os.path.join(checkpoint_dir, "ace_step_transformer")
-        text_encoder_model_path = os.path.join(checkpoint_dir, "umt5-base")
- 
-
-        dcae_checkpoint_path = dcae_model_path
-        vocoder_checkpoint_path = vocoder_model_path
-        ace_step_checkpoint_path = ace_step_model_path
-        text_encoder_checkpoint_path = text_encoder_model_path
+        dcae_checkpoint_path = os.path.join(checkpoint_dir, "music_dcae_f8c8")
+        vocoder_checkpoint_path = os.path.join(checkpoint_dir, "music_vocoder")
+        ace_step_checkpoint_path = os.path.join(checkpoint_dir, "ace_step_transformer")
+        text_encoder_checkpoint_path = os.path.join(checkpoint_dir, "umt5-base")
 
         self.music_dcae = MusicDCAE(
             dcae_checkpoint_path=dcae_checkpoint_path,
@@ -321,7 +310,7 @@ class ACEStepPipeline:
         self.text_encoder_model = torch.compile(self.text_encoder_model)
         self.text_encoder_model.load_state_dict(
             torch.load(
-                os.path.join(text_encoder_model_path, "pytorch_model_int4wo.bin"),
+                os.path.join(text_encoder_checkpoint_path, "pytorch_model_int4wo.bin"),
                 map_location=self.device,
             ),assign=True
         )
