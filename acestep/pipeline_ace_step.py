@@ -129,8 +129,8 @@ class ACEStepPipeline:
             self.dtype = torch.float16
         if device.type == "mps":
             self.dtype = torch.float32
-        if 'COLAB_FREE' in os.environ and len(os.environ['COLAB_FREE']):
-            self.dtype = torch.float16
+        if 'ACE_PIPELINE_DTYPE' in os.environ and len(os.environ['ACE_PIPELINE_DTYPE']):
+            self.dtype = getattr(torch, os.environ['ACE_PIPELINE_DTYPE'])
         self.device = device
         self.loaded = False
         self.torch_compile = torch_compile
