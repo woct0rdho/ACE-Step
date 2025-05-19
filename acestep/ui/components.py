@@ -130,7 +130,9 @@ def create_text2music_ui(
                     choices=["ACE-Step/ACE-Step-v1-chinese-rap-LoRA", "none"],
                     value="none",
                     allow_custom_value=True,
+                    min_width=300
                 )
+                lora_weight = gr.Number(value=1.0, label="Lora weight", step=0.1, maximum=3, minimum=-3)
 
             ref_audio_input = gr.Audio(type="filepath", label="Reference Audio (for Audio2Audio)", visible=False, elem_id="ref_audio_input", show_download_button=True)
             ref_audio_strength = gr.Slider(
@@ -353,7 +355,8 @@ def create_text2music_ui(
                         retake_seeds=retake_seeds,
                         retake_variance=retake_variance,
                         task="retake",
-                        lora_name_or_path="none" if "lora_name_or_path" not in json_data else json_data["lora_name_or_path"]
+                        lora_name_or_path="none" if "lora_name_or_path" not in json_data else json_data["lora_name_or_path"],
+                        lora_weight=1 if "lora_weight" not in json_data else json_data["lora_weight"]
                     )
 
                 retake_bnt.click(
@@ -477,7 +480,8 @@ def create_text2music_ui(
                         repaint_start=repaint_start,
                         repaint_end=repaint_end,
                         src_audio_path=src_audio_path,
-                        lora_name_or_path="none" if "lora_name_or_path" not in json_data else json_data["lora_name_or_path"]
+                        lora_name_or_path="none" if "lora_name_or_path" not in json_data else json_data["lora_name_or_path"],
+                        lora_weight=1 if "lora_weight" not in json_data else json_data["lora_weight"]
                     )
 
                 repaint_bnt.click(
@@ -652,7 +656,8 @@ def create_text2music_ui(
                         edit_n_min=edit_n_min,
                         edit_n_max=edit_n_max,
                         retake_seeds=retake_seeds,
-                        lora_name_or_path="none" if "lora_name_or_path" not in json_data else json_data["lora_name_or_path"]
+                        lora_name_or_path="none" if "lora_name_or_path" not in json_data else json_data["lora_name_or_path"],
+                        lora_weight=1 if "lora_weight" not in json_data else json_data["lora_weight"]
                     )
 
                 edit_bnt.click(
@@ -798,7 +803,16 @@ def create_text2music_ui(
                         repaint_start=repaint_start,
                         repaint_end=repaint_end,
                         src_audio_path=src_audio_path,
-                        lora_name_or_path="none" if "lora_name_or_path" not in json_data else json_data["lora_name_or_path"]
+                        lora_name_or_path=(
+                            "none"
+                            if "lora_name_or_path" not in json_data
+                            else json_data["lora_name_or_path"]
+                        ),
+                        lora_weight=(
+                            1
+                            if "lora_weight" not in json_data
+                            else json_data["lora_weight"]
+                        ),
                     )
 
                 extend_bnt.click(
@@ -969,6 +983,7 @@ def create_text2music_ui(
             ref_audio_strength,
             ref_audio_input,
             lora_name_or_path,
+            lora_weight
         ],
         outputs=outputs + [input_params_json],
     )
