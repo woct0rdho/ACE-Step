@@ -88,6 +88,7 @@ def ensure_directory_exists(directory):
 
 
 REPO_ID = "ACE-Step/ACE-Step-v1-3.5B"
+REPO_ID_QUANT = REPO_ID + "-q4-K-M" # ??? update this i guess
 
 
 # class ACEStepPipeline(DiffusionPipeline):
@@ -153,7 +154,7 @@ class ACEStepPipeline:
         import gc
         gc.collect()
 
-    def load_checkpoint(self, checkpoint_dir=None, export_quantized_weights=False):
+    def get_checkpoint_path(self, checkpoint_dir, repo):
         checkpoint_dir_models = None
         
         if checkpoint_dir is not None:
@@ -171,16 +172,19 @@ class ACEStepPipeline:
         
         if checkpoint_dir_models is None:
             if checkpoint_dir is None:
-                logger.info(f"Download models from Hugging Face: {REPO_ID}")
-                checkpoint_dir_models = snapshot_download(REPO_ID)
+                logger.info(f"Download models from Hugging Face: {repo}")
+                checkpoint_dir_models = snapshot_download(repo)
             else:
-                logger.info(f"Download models from Hugging Face: {REPO_ID}, cache to: {checkpoint_dir}")
-                checkpoint_dir_models = snapshot_download(REPO_ID, cache_dir=checkpoint_dir)
+                logger.info(f"Download models from Hugging Face: {repo}, cache to: {checkpoint_dir}")
+                checkpoint_dir_models = snapshot_download(repo, cache_dir=checkpoint_dir)
+        return checkpoint_dir_models
 
-        dcae_checkpoint_path = os.path.join(checkpoint_dir_models, "music_dcae_f8c8")
-        vocoder_checkpoint_path = os.path.join(checkpoint_dir_models, "music_vocoder")
-        ace_step_checkpoint_path = os.path.join(checkpoint_dir_models, "ace_step_transformer")
-        text_encoder_checkpoint_path = os.path.join(checkpoint_dir_models, "umt5-base")
+    def load_checkpoint(self, checkpoint_dir=None, export_quantized_weights=False):
+        checkpoint_dir = self.get_checkpoint_path(checkpoint_dir, REPO_ID)
+        dcae_checkpoint_path = os.path.join(checkpoint_dir, "music_dcae_f8c8")
+        vocoder_checkpoint_path = os.path.join(checkpoint_dir, "music_vocoder")
+        ace_step_checkpoint_path = os.path.join(checkpoint_dir, "ace_step_transformer")
+        text_encoder_checkpoint_path = os.path.join(checkpoint_dir, "umt5-base")
 
         self.ace_step_transformer = ACEStepTransformer2DModel.from_pretrained(
             ace_step_checkpoint_path, torch_dtype=self.dtype
@@ -275,7 +279,7 @@ class ACEStepPipeline:
 
 
     def load_quantized_checkpoint(self, checkpoint_dir=None):
-
+        checkpoint_dir = self.get_checkpoint_path(checkpoint_dir, REPO_ID_QUANT)
         dcae_checkpoint_path = os.path.join(checkpoint_dir, "music_dcae_f8c8")
         vocoder_checkpoint_path = os.path.join(checkpoint_dir, "music_vocoder")
         ace_step_checkpoint_path = os.path.join(checkpoint_dir, "ace_step_transformer")
