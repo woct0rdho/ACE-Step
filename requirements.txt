@@ -25,3 +25,4 @@ peft
 tensorboard
 tensorboardX
 natsort==8.4.0
+safetensors==0.5.3

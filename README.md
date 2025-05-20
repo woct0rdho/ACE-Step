@@ -30,15 +30,24 @@ For example, I want to train a LoRA for Sawano Hiroyuki (澤野 弘之)'s style.
     ```pwsh
     python trainer_new.py --dataset_path C:\data\sawano_prep --exp_name sawano
     ```
-    The LoRA will be saved to the directory `./checkpoints`. I recommend to clear this directory before training, otherwise the LoRA may not be correctly saved.
+    The LoRA will be saved to the directory `checkpoints`. I recommend to clear this directory before training, otherwise the LoRA may not be correctly saved.
 
     Note that my script uses Wandb rather than TensorBoard. If you don't need it, you can remove the `WandbLogger`.
+
+4. LoRA strength:
+
+    At this point, when loading the LoRA in ComfyUI, you need to set the lora strength to `alpha / sqrt(rank)` (for rslora) or `alpha / rank` (for non-rslora). For example, if rank = 64, alpha = 1, rslora is enabled, then the lora strength should be `1 / sqrt(64) = 0.125`.
+
+    To avoid manually setting this, you can run:
+    ```pwsh
+    python bake_alpha_in_lora.py --input_name checkpoints/epoch=0-step=100_lora/pytorch_lora_weights.safetensors --output_name out.safetensors --lora_config_path config/lora_config_transformer_only.json
+    ```
+    Then load `out.safetensors` in ComfyUI and set the lora strength to 1. But it may not be loaded correctly in diffusers.
 
 ## Tips
 
 * If you don't have experience, you can first try to train with a single audio and make sure that it can be overfitted. This is a sanity check of the training pipeline
-* We can freeze the lyrics decoder and only train the transformer using `config/lora_config_transformer_only.json`. I think training the lyrics decoder is needed only when adding a new language
-* After training, when loading the LoRA in ComfyUI, we need to set the lora weight to `alpha / sqrt(rank)` (for rslora) or `alpha / rank` (for non-rslora). For example, if rank = 64, alpha = 1, rslora is enabled, then the lora weight should be `1 / sqrt(64) = 0.125`
+* You can freeze the lyrics decoder and only train the transformer using `config/lora_config_transformer_only.json`. I think training the lyrics decoder is needed only when adding a new language
 
 ## TODO
 
