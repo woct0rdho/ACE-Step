@@ -28,19 +28,20 @@ from acestep.schedulers.scheduling_flow_match_euler_discrete import (
     FlowMatchEulerDiscreteScheduler,
 )
 
-torch.set_float32_matmul_precision("high")
-torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = True
-torch.backends.cuda.matmul.allow_tf32 = True
-torch.backends.cudnn.allow_tf32 = True
+if torch.cuda.is_bf16_supported():
+    torch.set_float32_matmul_precision("high")
+    torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = True
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.backends.cudnn.allow_tf32 = True
 torch.backends.cudnn.benchmark = True
 # torch._dynamo.config.recompile_limit = 64
 
 
-def _to_bf16(x):
+def _to_dtype(x, dtype):
     if isinstance(x, list):
-        return [_to_bf16(y) for y in x]
+        return [_to_dtype(y, dtype) for y in x]
     elif isinstance(x, torch.Tensor) and x.dtype == torch.float32:
-        return x.to(torch.bfloat16)
+        return x.to(dtype)
     else:
         return x
 
@@ -75,13 +76,19 @@ class Pipeline(LightningModule):
         super().__init__()
         self.save_hyperparameters()
 
+        if torch.cuda.is_bf16_supported():
+            self.dtype = torch.bfloat16
+        else:
+            self.dtype = torch.float16
+        self.device = torch.device("cuda:0")
+
         # Initialize scheduler
         self.scheduler = self.get_scheduler()
 
         # Load model
         acestep_pipeline = ACEStepPipeline(checkpoint_dir)
         acestep_pipeline.load_checkpoint(acestep_pipeline.checkpoint_dir)
-        self.transformer = acestep_pipeline.ace_step_transformer.to(torch.bfloat16)
+        self.transformer = acestep_pipeline.ace_step_transformer.to(self.device, self.dtype)
         self.transformer.train()
         self.transformer.enable_gradient_checkpointing()
         del acestep_pipeline
@@ -162,7 +169,7 @@ class Pipeline(LightningModule):
 
     def train_dataloader(self):
         ds = Dataset.load_from_disk(self.hparams.dataset_path).with_format(
-            "torch", device="cuda:0"
+            "torch", device=self.device
         )
         return DataLoader(
             ds,
@@ -207,7 +214,7 @@ class Pipeline(LightningModule):
         return timesteps
 
     def run_step(self, batch, batch_idx):
-        batch = {k: _to_bf16(v) for k, v in batch.items()}
+        batch = {k: _to_dtype(v, self.dtype) for k, v in batch.items()}
 
         keys = batch["keys"]
         target_latents = batch["target_latents"]
@@ -221,11 +228,11 @@ class Pipeline(LightningModule):
         mhubert_ssl_hidden_states = batch["mhubert_ssl_hidden_states"]
 
         target_image = target_latents
-        device = target_image.device
-        dtype = target_image.dtype
+        device = self.device
+        dtype = self.dtype
 
         # Step 1: Generate random noise, initialize settings
-        noise = torch.randn_like(target_image, device=device)
+        noise = torch.randn_like(target_image)
         bsz = target_image.shape[0]
         timesteps = self.get_timestep(bsz, device)
 

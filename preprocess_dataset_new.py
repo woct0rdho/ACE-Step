@@ -14,10 +14,11 @@ from transformers import AutoModel, Wav2Vec2FeatureExtractor
 from acestep.pipeline_ace_step import ACEStepPipeline
 from acestep.text2music_dataset import Text2MusicDataset
 
-torch.set_float32_matmul_precision("high")
-torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = True
-torch.backends.cuda.matmul.allow_tf32 = True
-torch.backends.cudnn.allow_tf32 = True
+if torch.cuda.is_bf16_supported():
+    torch.set_float32_matmul_precision("high")
+    torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = True
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.backends.cudnn.allow_tf32 = True
 torch.backends.cudnn.benchmark = True
 # torch._dynamo.config.recompile_limit = 64
 
@@ -26,7 +27,10 @@ class Preprocessor(torch.nn.Module):
     def __init__(self, checkpoint_dir=None):
         super().__init__()
 
-        self.dtype = torch.bfloat16
+        if torch.cuda.is_bf16_supported():
+            self.dtype = torch.bfloat16
+        else:
+            self.dtype = torch.float16
         self.device = torch.device("cuda:0")
 
         acestep_pipeline = ACEStepPipeline(checkpoint_dir)
